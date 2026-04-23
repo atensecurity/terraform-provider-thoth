@@ -1,18 +1,18 @@
-terraform {
-  required_providers {
-    thoth = {
-      source  = "atensecurity/thoth"
-      version = ">= 0.1.0"
-    }
-  }
-}
+module "thoth_bootstrap" {
+  source = "../../modules/bootstrap"
 
-provider "thoth" {
-  tenant_id  = var.tenant_id
-  govapi_url = var.govapi_url
-  token      = var.admin_bearer_token
-}
+  tenant_id          = var.tenant_id
+  govapi_url         = var.govapi_url
+  admin_bearer_token = var.admin_bearer_token
 
-# Placeholder example resources (to be implemented in provider)
-# resource "thoth_tenant_settings" "this" {}
-# resource "thoth_mdm_provider" "jamf" {}
+  compliance_profile = "soc2"
+  shadow_low         = "allow"
+  shadow_medium      = "step_up"
+  shadow_high        = "block"
+  shadow_critical    = "block"
+
+  webhook_url     = var.siem_webhook_url
+  webhook_secret  = var.siem_webhook_secret
+  webhook_enabled = true
+  test_webhook    = true
+}
