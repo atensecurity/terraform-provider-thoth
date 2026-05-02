@@ -29,7 +29,7 @@ terraform {
   required_providers {
     thoth = {
       source  = "atensecurity/thoth"
-      version = "~> 0.1"
+      version = "~> 0.1.1"
     }
   }
 }
