@@ -1,0 +1,15 @@
+---
+page_title: "thoth_governance_tools Data Source"
+subcategory: "Telemetry"
+description: |-
+  Reads aggregated governance tool telemetry.
+---
+
+# data source: thoth_governance_tools
+
+```terraform
+data "thoth_governance_tools" "window" {
+  window_hours = 24
+  limit        = 100
+}
+```

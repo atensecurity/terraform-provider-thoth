@@ -1,0 +1,22 @@
+---
+page_title: "thoth_browser_provider Resource"
+subcategory: "Browser"
+description: |-
+  Manages browser provider connectivity and configuration.
+---
+
+# thoth_browser_provider
+
+Configures browser policy provider integration for a tenant.
+
+## Example Usage
+
+```terraform
+resource "thoth_browser_provider" "chrome" {
+  provider = "chrome"
+  enabled  = true
+  config_json = jsonencode({
+    tenant = "acme"
+  })
+}
+```

@@ -1,21 +1,58 @@
 variable "tenant_id" {
-  type = string
+  description = "Tenant slug used by GovAPI path scoping."
+  type        = string
 }
 
-variable "govapi_url" {
-  type = string
+variable "apex_domain" {
+  description = "Apex domain used for derived GovAPI host."
+  type        = string
+  default     = "atensecurity.com"
 }
 
 variable "admin_bearer_token" {
-  type      = string
-  sensitive = true
+  description = "Admin bearer token used for Thoth control-plane APIs."
+  type        = string
+  sensitive   = true
 }
 
-variable "siem_webhook_url" {
-  type = string
+variable "compliance_profile" {
+  description = "Compliance profile for default governance controls."
+  type        = string
+  default     = "soc2"
 }
 
-variable "siem_webhook_secret" {
-  type      = string
-  sensitive = true
+variable "siem_provider" {
+  description = "SIEM provider slug."
+  type        = string
+  default     = "splunk"
+}
+
+variable "webhook_url" {
+  description = "Webhook endpoint URL used for SIEM/SOAR delivery."
+  type        = string
+}
+
+variable "webhook_secret" {
+  description = "Webhook signing secret."
+  type        = string
+  sensitive   = true
+}
+
+variable "jamf_base_url" {
+  description = "Jamf API base URL."
+  type        = string
+  default     = ""
+}
+
+variable "jamf_client_id" {
+  description = "Jamf OAuth client ID."
+  type        = string
+  default     = ""
+}
+
+variable "jamf_client_secret" {
+  description = "Jamf OAuth client secret."
+  type        = string
+  sensitive   = true
+  default     = ""
 }

@@ -1,0 +1,24 @@
+---
+page_title: "thoth_pack_assignment Resource"
+subcategory: "Governance"
+description: |-
+  Applies and manages a compliance pack assignment for a specific agent.
+---
+
+# thoth_pack_assignment
+
+Assigns a compliance pack to a target agent and tracks assignment status.
+
+## Example Usage
+
+```terraform
+resource "thoth_pack_assignment" "cis_agent" {
+  agent_id            = var.agent_id
+  pack_id             = "cis-l1"
+  environment         = "prod"
+  approval_policy_id  = "pol-123"
+  overrides_json      = jsonencode({
+    exempt_paths = ["/tmp", "/var/tmp"]
+  })
+}
+```

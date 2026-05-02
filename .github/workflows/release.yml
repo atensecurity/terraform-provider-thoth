@@ -1,0 +1,144 @@
+name: Release Terraform Provider
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (for example 0.1.0, 0.1.0-rc1, v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout git history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: go.sum
+
+      - name: Resolve and validate release tag
+        id: release_tag
+        shell: bash
+        env:
+          RAW_TAG_INPUT: ${{ github.event.inputs.release_tag }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            RAW_TAG="${RAW_TAG_INPUT}"
+          else
+            RAW_TAG="${GITHUB_REF_NAME}"
+          fi
+
+          RAW_TAG="$(echo "${RAW_TAG}" | xargs)"
+          if [[ -z "${RAW_TAG}" ]]; then
+            echo "release_tag is required and cannot be empty." >&2
+            exit 1
+          fi
+
+          if [[ "${RAW_TAG}" == v* ]]; then
+            CURRENT_TAG="${RAW_TAG}"
+          else
+            CURRENT_TAG="v${RAW_TAG}"
+          fi
+
+          if [[ ! "${CURRENT_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+            echo "Invalid release tag '${RAW_TAG}' (normalized: '${CURRENT_TAG}')." >&2
+            echo "Expected: 0.1.0, 0.1.0-rc1, v0.1.0, or v0.1.0-rc1." >&2
+            exit 1
+          fi
+
+          echo "current_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch tags
+        run: git fetch --force --tags
+
+      - name: Ensure tag exists and checkout for manual runs
+        shell: bash
+        env:
+          CURRENT_TAG: ${{ steps.release_tag.outputs.current_tag }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if ! git rev-parse --verify "refs/tags/${CURRENT_TAG}" >/dev/null 2>&1; then
+            echo "Tag '${CURRENT_TAG}' does not exist in this repository." >&2
+            echo "Create and push the tag first, then rerun this workflow." >&2
+            exit 1
+          fi
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            git checkout --force "refs/tags/${CURRENT_TAG}"
+          fi
+
+      - name: Verify provider builds
+        shell: bash
+        env:
+          CURRENT_TAG: ${{ steps.release_tag.outputs.current_tag }}
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${CURRENT_TAG#v}"
+
+          if [[ -z "${RELEASE_VERSION}" || "${RELEASE_VERSION}" == "dev" ]]; then
+            echo "invalid release version resolved from tag: '${RELEASE_VERSION}'" >&2
+            exit 1
+          fi
+
+          env THOTH_RELEASE_STRICT_VERSION=1 GOCACHE=/tmp/gocache \
+            go test -ldflags "-X github.com/atensecurity/terraform-provider-thoth.version=${RELEASE_VERSION}" ./...
+          env GOCACHE=/tmp/gocache \
+            go build -ldflags "-X github.com/atensecurity/terraform-provider-thoth.version=${RELEASE_VERSION}" ./...
+
+      - name: Import release signing key
+        id: gpg
+        shell: bash
+        env:
+          THOTH_TF_PROVIDER_GPG_PRIVATE_KEY: ${{ secrets.THOTH_TF_PROVIDER_GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${THOTH_TF_PROVIDER_GPG_PRIVATE_KEY}" ]]; then
+            echo "Missing secret THOTH_TF_PROVIDER_GPG_PRIVATE_KEY" >&2
+            exit 1
+          fi
+
+          TMP_KEY_FILE="$(mktemp)"
+          printf '%s\n' "${THOTH_TF_PROVIDER_GPG_PRIVATE_KEY}" > "${TMP_KEY_FILE}"
+          gpg --batch --import "${TMP_KEY_FILE}"
+          rm -f "${TMP_KEY_FILE}"
+
+          FINGERPRINT="$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')"
+          if [[ -z "${FINGERPRINT}" ]]; then
+            echo "Unable to determine imported GPG fingerprint" >&2
+            exit 1
+          fi
+          echo "fingerprint=${FINGERPRINT}" >> "$GITHUB_OUTPUT"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.gpg.outputs.fingerprint }}
+          GPG_PASSPHRASE: ${{ secrets.THOTH_TF_PROVIDER_GPG_PASSPHRASE }}

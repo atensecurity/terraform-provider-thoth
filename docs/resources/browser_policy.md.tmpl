@@ -1,0 +1,29 @@
+---
+page_title: "thoth_browser_policy Resource"
+subcategory: "Browser"
+description: |-
+  Manages browser policy definitions and compiled policy artifacts.
+---
+
+# thoth_browser_policy
+
+Creates and updates browser policy objects.
+
+## Example Usage
+
+```terraform
+resource "thoth_browser_policy" "chrome_lockdown" {
+  name            = "Chrome Lockdown"
+  provider        = "chrome"
+  enforcement_mode = "enforce"
+  active          = true
+
+  policy_json = jsonencode({
+    extension_settings = {
+      "*" = {
+        installation_mode = "blocked"
+      }
+    }
+  })
+}
+```

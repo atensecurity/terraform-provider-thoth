@@ -1,0 +1,26 @@
+---
+page_title: "thoth_tenant_settings Resource"
+subcategory: "Governance"
+description: |-
+  Manages tenant-wide Thoth governance settings.
+---
+
+# thoth_tenant_settings
+
+Manages default tenant policy posture, webhook routing, SIEM/PAM configuration, secret broker controls, and model router defaults.
+
+## Example Usage
+
+```terraform
+resource "thoth_tenant_settings" "tenant" {
+  compliance_profile = "soc2"
+  shadow_low         = "allow"
+  shadow_medium      = "step_up"
+  shadow_high        = "block"
+  shadow_critical    = "block"
+
+  webhook_enabled = true
+  webhook_url     = var.webhook_url
+  webhook_secret  = var.webhook_secret
+}
+```

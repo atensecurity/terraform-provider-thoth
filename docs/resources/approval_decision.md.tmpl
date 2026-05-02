@@ -1,0 +1,19 @@
+---
+page_title: "thoth_approval_decision Resource"
+subcategory: "Governance"
+description: |-
+  Resolves a Thoth approval request with an explicit decision.
+---
+
+# thoth_approval_decision
+
+Resolves pending approvals raised by STEP_UP policy decisions.
+
+## Example Usage
+
+```terraform
+resource "thoth_approval_decision" "incident_step_up" {
+  approval_id = var.approval_id
+  decision    = "approve"
+}
+```

@@ -1,0 +1,15 @@
+---
+page_title: "thoth_governance_feed Data Source"
+subcategory: "Telemetry"
+description: |-
+  Reads governance feed events.
+---
+
+# data source: thoth_governance_feed
+
+```terraform
+data "thoth_governance_feed" "recent" {
+  per_page = 50
+  sort_dir = "desc"
+}
+```

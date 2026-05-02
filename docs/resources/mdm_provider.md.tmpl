@@ -1,0 +1,26 @@
+---
+page_title: "thoth_mdm_provider Resource"
+subcategory: "MDM"
+description: |-
+  Manages a Thoth MDM provider integration.
+---
+
+# thoth_mdm_provider
+
+Creates or updates an MDM integration (Jamf, Intune, Workspace ONE, custom).
+
+## Example Usage
+
+```terraform
+resource "thoth_mdm_provider" "jamf" {
+  provider = "jamf"
+  name     = "Jamf Pro"
+  enabled  = true
+
+  config_json = jsonencode({
+    base_url      = var.jamf_base_url
+    client_id     = var.jamf_client_id
+    client_secret = var.jamf_client_secret
+  })
+}
+```

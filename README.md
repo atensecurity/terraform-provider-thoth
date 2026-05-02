@@ -1,56 +1,119 @@
 # terraform-provider-thoth
 
-Official Terraform artifacts for Thoth headless control-plane operations.
+Terraform provider for Aten Security Thoth headless AI Governance Control Plane.
 
-## What works today
+- Provider source: `registry.terraform.io/atensecurity/thoth`
+- Terraform version: `>= 1.5`
+- Plugin Framework implementation (Go)
 
-Use the `modules/bootstrap` module to provision tenant governance settings,
-SIEM/SOAR webhook routing, and MDM provider sync via `thothctl` in CI/GitOps.
+## Documentation
 
-### Customer quickstart
+- Terraform Registry: https://registry.terraform.io/providers/atensecurity/thoth/latest
+- Aten Security docs: https://docs.atensecurity.com/docs/terraform-provider
+- Basic example: https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic
 
-```bash
-git clone https://github.com/atensecurity/terraform-provider-thoth.git
-cd terraform-provider-thoth/examples/basic
-terraform init
-terraform apply
-```
+This provider exposes GovAPI-backed resources to manage:
 
-### Module install (Git source)
+- Tenant governance settings
+- MDM provider integrations and sync jobs
+- Browser policy providers/policies/enrollments
+- JIT API keys
+- Webhook delivery test execution
+
+## Quick Start
 
 ```hcl
-module "thoth_bootstrap" {
-  source = "github.com/atensecurity/terraform-provider-thoth//modules/bootstrap?ref=v0.1.0"
+terraform {
+  required_version = ">= 1.5"
 
+  required_providers {
+    thoth = {
+      source  = "atensecurity/thoth"
+      version = "~> 0.1"
+    }
+  }
+}
+
+provider "thoth" {
   tenant_id               = var.tenant_id
-  govapi_url              = var.govapi_url
-  admin_bearer_token_file = "/run/secrets/thoth_admin_jwt"
+  apex_domain             = "atensecurity.com" # optional, defaults to atensecurity.com
+  admin_bearer_token      = var.admin_bearer_token
+  request_timeout_seconds = 30
+}
 
+resource "thoth_tenant_settings" "this" {
   compliance_profile = "soc2"
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
   shadow_critical    = "block"
 
-  webhook_url     = var.siem_webhook_url
-  webhook_secret  = var.siem_webhook_secret
   webhook_enabled = true
-  test_webhook    = true
+  webhook_url     = var.webhook_url
+  webhook_secret  = var.webhook_secret
 }
 ```
 
-## Provider-native resources (in progress)
+When `api_base_url` is omitted, the provider derives it as:
+`https://grid.<tenant_id>.<apex_domain>`.
 
-Planned resource set:
+See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic) for a full end-to-end example.
+
+## Provider Resources
 
 - `thoth_tenant_settings`
 - `thoth_mdm_provider`
 - `thoth_mdm_sync`
+- `thoth_browser_provider`
+- `thoth_browser_policy`
+- `thoth_browser_enrollment`
+- `thoth_api_key`
 - `thoth_webhook_test`
+- `thoth_policy_sync`
+- `thoth_approval_decision`
+- `thoth_pack_assignment`
 
-Provider-native resources will be added with versioned release artifacts in this
-repository.
+## Provider Data Sources
 
-## Example
+- `thoth_tenant_settings`
+- `thoth_governance_feed`
+- `thoth_governance_tools`
+- `thoth_api_key_metrics`
+- `thoth_mdm_sync_job`
 
-See `examples/basic` for a starter layout.
+## Local Development
+
+```bash
+env GOCACHE=/tmp/gocache go mod tidy
+env GOCACHE=/tmp/gocache go build ./...
+env GOCACHE=/tmp/gocache go test ./...
+```
+
+## Release Automation
+
+Provider release automation is defined for the public provider repository in:
+
+- `.goreleaser.yml` (provider package/archive/signing layout)
+- `.github/workflows/release.yml` (tag-triggered GitHub release flow)
+
+The release workflow expects the following repository secrets:
+
+- `THOTH_TF_PROVIDER_GPG_PRIVATE_KEY`
+- `THOTH_TF_PROVIDER_GPG_PASSPHRASE`
+
+Tag formats supported by the workflow:
+
+- `v0.1.0`
+- `v0.1.0-rc1`
+
+## Governance And IP
+
+- [Public Architecture Boundary](./PUBLIC_ARCHITECTURE_BOUNDARY.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Trademark Notice](./TRADEMARKS.md)
+
+## Notes
+
+- `thoth_mdm_provider`, `thoth_browser_provider`, `thoth_browser_policy`, and `thoth_browser_enrollment` use API upsert semantics.
+- For resources without hard delete endpoints, delete operations stop management in Terraform and, when possible, perform a safe disable/deactivate call.

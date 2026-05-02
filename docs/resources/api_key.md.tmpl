@@ -1,0 +1,23 @@
+---
+page_title: "thoth_api_key Resource"
+subcategory: "Access"
+description: |-
+  Creates scoped JIT API keys for Thoth runtime/admin operations.
+---
+
+# thoth_api_key
+
+Issues short-lived scoped API keys.
+
+## Example Usage
+
+```terraform
+resource "thoth_api_key" "agent_exec" {
+  name            = "agent-exec"
+  scope_level     = "agent"
+  scope_target_id = "agent-123"
+  permissions     = ["execute", "read"]
+  ttl_seconds     = 3600
+  jit_reason      = "incident-response"
+}
+```

@@ -1,0 +1,29 @@
+---
+page_title: "Thoth Provider"
+subcategory: "Provider"
+description: |-
+  Provider for managing Aten Security Thoth headless AI Governance Control Plane.
+---
+
+# thoth Provider
+
+Use the `thoth` provider to configure tenant-level governance settings, browser and MDM integrations, and scoped API keys.
+
+## Example Usage
+
+```terraform
+terraform {
+  required_providers {
+    thoth = {
+      source  = "atensecurity/thoth"
+      version = "~> 0.1"
+    }
+  }
+}
+
+provider "thoth" {
+  tenant_id          = "acme"
+  apex_domain        = "atensecurity.com" # optional
+  admin_bearer_token = var.admin_bearer_token
+}
+```

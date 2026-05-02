@@ -1,0 +1,20 @@
+---
+page_title: "thoth_mdm_sync Resource"
+subcategory: "MDM"
+description: |-
+  Triggers and tracks an MDM sync job.
+---
+
+# thoth_mdm_sync
+
+Starts provider sync and optionally waits for completion.
+
+## Example Usage
+
+```terraform
+resource "thoth_mdm_sync" "sync" {
+  provider            = thoth_mdm_provider.jamf.provider
+  wait_for_completion = true
+  timeout_seconds     = 180
+}
+```

@@ -1,0 +1,21 @@
+---
+page_title: "thoth_browser_enrollment Resource"
+subcategory: "Browser"
+description: |-
+  Manages browser enrollment records.
+---
+
+# thoth_browser_enrollment
+
+Creates and updates browser enrollment state for users/devices.
+
+## Example Usage
+
+```terraform
+resource "thoth_browser_enrollment" "eng_laptop" {
+  provider   = "chrome"
+  user_id    = "alice"
+  device_id  = "macbook-001"
+  status     = "active"
+}
+```

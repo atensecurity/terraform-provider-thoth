@@ -1,0 +1,18 @@
+---
+page_title: "thoth_webhook_test Resource"
+subcategory: "Governance"
+description: |-
+  Executes webhook delivery test against current tenant settings.
+---
+
+# thoth_webhook_test
+
+Triggers `POST /:tenant-id/thoth/settings/webhook/test` and stores the result.
+
+## Example Usage
+
+```terraform
+resource "thoth_webhook_test" "delivery" {
+  trigger = "post-settings-apply"
+}
+```
