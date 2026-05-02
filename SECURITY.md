@@ -2,7 +2,7 @@
 
 ## Scope
 
-This file covers security reporting for `platform/public/terraform-provider-thoth`.
+This file covers security reporting for `terraform-provider-thoth`.
 
 The Terraform provider is a control-plane API client. Most security-critical
 enforcement behavior runs in Aten Security backend services.

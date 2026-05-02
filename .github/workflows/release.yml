@@ -73,11 +73,10 @@ jobs:
       - name: Fetch tags
         run: git fetch --force --tags
 
-      - name: Ensure tag exists and checkout for manual runs
+      - name: Ensure tag exists and checkout tag commit
         shell: bash
         env:
           CURRENT_TAG: ${{ steps.release_tag.outputs.current_tag }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           if ! git rev-parse --verify "refs/tags/${CURRENT_TAG}" >/dev/null 2>&1; then
@@ -86,9 +85,9 @@ jobs:
             exit 1
           fi
 
-          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
-            git checkout --force "refs/tags/${CURRENT_TAG}"
-          fi
+          # Always release from the exact tag commit to avoid resolving a
+          # different current tag from branch state.
+          git checkout --force "refs/tags/${CURRENT_TAG}"
 
       - name: Verify provider builds
         shell: bash
