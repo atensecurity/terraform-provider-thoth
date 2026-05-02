@@ -9,7 +9,7 @@ Terraform provider for Aten Security Thoth headless AI Governance Control Plane.
 ## Documentation
 
 - Terraform Registry: https://registry.terraform.io/providers/atensecurity/thoth/latest
-- Aten Security docs: https://docs.atensecurity.com/docs/terraform-provider
+- Aten Security docs: https://docs.atensecurity.com/docs/terraform-provider/
 - Basic example: https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic
 
 This provider exposes GovAPI-backed resources to manage:
