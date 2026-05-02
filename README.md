@@ -96,11 +96,6 @@ Provider release automation is defined for the public provider repository in:
 - `.goreleaser.yml` (provider package/archive/signing layout)
 - `.github/workflows/release.yml` (tag-triggered GitHub release flow)
 
-The release workflow expects the following repository secrets:
-
-- `THOTH_TF_PROVIDER_GPG_PRIVATE_KEY`
-- `THOTH_TF_PROVIDER_GPG_PASSPHRASE`
-
 Tag formats supported by the workflow:
 
 - `v0.1.1`
