@@ -34,9 +34,9 @@ resource "thoth_tenant_settings" "tenant" {
 }
 
 resource "thoth_mdm_provider" "jamf" {
-  provider = "jamf"
-  name     = "Jamf Pro"
-  enabled  = true
+  provider_name = "jamf"
+  name          = "Jamf Pro"
+  enabled       = true
 
   config_json = jsonencode({
     base_url      = var.jamf_base_url
@@ -46,7 +46,7 @@ resource "thoth_mdm_provider" "jamf" {
 }
 
 resource "thoth_mdm_sync" "jamf_sync" {
-  provider            = thoth_mdm_provider.jamf.provider
+  provider_name       = thoth_mdm_provider.jamf.provider_name
   wait_for_completion = true
   timeout_seconds     = 180
 }

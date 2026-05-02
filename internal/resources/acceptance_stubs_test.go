@@ -70,7 +70,7 @@ func TestAccMDMProvider_basic(t *testing.T) {
 			{
 				Config: testAccMDMProviderConfig("custom", "tf-acc-custom"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("provider"), knownvalue.StringExact("custom")),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("provider_name"), knownvalue.StringExact("custom")),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("name"), knownvalue.StringExact("tf-acc-custom")),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("id"), knownvalue.NotNull()),
 				},
@@ -171,9 +171,9 @@ resource "thoth_tenant_settings" "test" {
 func testAccMDMProviderConfig(provider, name string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
 resource "thoth_mdm_provider" "test" {
-  provider = %q
-  name     = %q
-  enabled  = true
+  provider_name = %q
+  name          = %q
+  enabled       = true
 
   config_json = jsonencode({
     endpoint  = "https://mdm.example.com"

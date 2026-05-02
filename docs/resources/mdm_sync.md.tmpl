@@ -13,7 +13,7 @@ Starts provider sync and optionally waits for completion.
 
 ```terraform
 resource "thoth_mdm_sync" "sync" {
-  provider            = thoth_mdm_provider.jamf.provider
+  provider_name       = thoth_mdm_provider.jamf.provider_name
   wait_for_completion = true
   timeout_seconds     = 180
 }

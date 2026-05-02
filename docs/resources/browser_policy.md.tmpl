@@ -14,7 +14,7 @@ Creates and updates browser policy objects.
 ```terraform
 resource "thoth_browser_policy" "chrome_lockdown" {
   name            = "Chrome Lockdown"
-  provider        = "chrome"
+  provider_name   = "chrome"
   enforcement_mode = "enforce"
   active          = true
 

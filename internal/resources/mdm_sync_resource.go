@@ -28,7 +28,7 @@ type mdmSyncResource struct {
 type mdmSyncModel struct {
 	ID                types.String `tfsdk:"id"`
 	TenantID          types.String `tfsdk:"tenant_id"`
-	Provider          types.String `tfsdk:"provider"`
+	ProviderName      types.String `tfsdk:"provider_name"`
 	Trigger           types.String `tfsdk:"trigger"`
 	WaitForCompletion types.Bool   `tfsdk:"wait_for_completion"`
 	PollIntervalSecs  types.Int64  `tfsdk:"poll_interval_seconds"`
@@ -57,7 +57,7 @@ func (r *mdmSyncResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		Attributes: map[string]schema.Attribute{
 			"id":                    schema.StringAttribute{Computed: true, Description: "Sync job ID.", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"tenant_id":             schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
-			"provider":              schema.StringAttribute{Required: true, Description: "MDM provider slug.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"provider_name":         schema.StringAttribute{Required: true, Description: "MDM provider slug.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"trigger":               schema.StringAttribute{Optional: true, Description: "Arbitrary replacement trigger value.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"wait_for_completion":   schema.BoolAttribute{Optional: true, Description: "Wait for sync job completion before returning state."},
 			"poll_interval_seconds": schema.Int64Attribute{Optional: true, Description: "Polling interval when wait_for_completion=true."},
@@ -146,9 +146,9 @@ func (r *mdmSyncResource) ImportState(ctx context.Context, req resource.ImportSt
 }
 
 func (r *mdmSyncResource) runSync(ctx context.Context, plan mdmSyncModel, diags *diag.Diagnostics) (mdmSyncModel, bool) {
-	provider := strings.TrimSpace(plan.Provider.ValueString())
+	provider := strings.TrimSpace(plan.ProviderName.ValueString())
 	if provider == "" {
-		diags.AddAttributeError(path.Root("provider"), "Missing provider", "provider must be set.")
+		diags.AddAttributeError(path.Root("provider_name"), "Missing provider", "provider_name must be set.")
 		return mdmSyncModel{}, false
 	}
 
@@ -219,7 +219,7 @@ func flattenMDMSync(row map[string]any, current mdmSyncModel, tenantID string) m
 	next := current
 	next.ID = types.StringValue(tfhelpers.GetString(row, "job_id"))
 	next.TenantID = types.StringValue(tenantID)
-	next.Provider = nullableString(row, "provider")
+	next.ProviderName = nullableString(row, "provider")
 	next.Status = nullableString(row, "status")
 	next.SyncedEndpoints = types.Int64Value(tfhelpers.GetInt64(row, "synced_endpoints"))
 	next.UnassignedCount = types.Int64Value(tfhelpers.GetInt64(row, "unassigned_count"))

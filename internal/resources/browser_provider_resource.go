@@ -25,16 +25,16 @@ type browserProviderResource struct {
 }
 
 type browserProviderModel struct {
-	ID         types.String `tfsdk:"id"`
-	TenantID   types.String `tfsdk:"tenant_id"`
-	Provider   types.String `tfsdk:"provider"`
-	Name       types.String `tfsdk:"name"`
-	Enabled    types.Bool   `tfsdk:"enabled"`
-	Status     types.String `tfsdk:"status"`
-	ConfigJSON types.String `tfsdk:"config_json"`
-	LastError  types.String `tfsdk:"last_error"`
-	CreatedAt  types.String `tfsdk:"created_at"`
-	UpdatedAt  types.String `tfsdk:"updated_at"`
+	ID           types.String `tfsdk:"id"`
+	TenantID     types.String `tfsdk:"tenant_id"`
+	ProviderName types.String `tfsdk:"provider_name"`
+	Name         types.String `tfsdk:"name"`
+	Enabled      types.Bool   `tfsdk:"enabled"`
+	Status       types.String `tfsdk:"status"`
+	ConfigJSON   types.String `tfsdk:"config_json"`
+	LastError    types.String `tfsdk:"last_error"`
+	CreatedAt    types.String `tfsdk:"created_at"`
+	UpdatedAt    types.String `tfsdk:"updated_at"`
 }
 
 func NewBrowserProviderResource() resource.Resource {
@@ -49,16 +49,16 @@ func (r *browserProviderResource) Schema(_ context.Context, _ resource.SchemaReq
 	resp.Schema = schema.Schema{
 		Description: "Manages browser policy provider connectivity for a tenant.",
 		Attributes: map[string]schema.Attribute{
-			"id":          schema.StringAttribute{Computed: true, Description: "Resource ID (provider slug).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"tenant_id":   schema.StringAttribute{Computed: true, Description: "Tenant ID from provider config."},
-			"provider":    schema.StringAttribute{Required: true, Description: "Browser provider slug: chrome, firefox, safari, island.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"name":        schema.StringAttribute{Optional: true, Description: "Display name for this provider integration."},
-			"enabled":     schema.BoolAttribute{Optional: true, Description: "Enable provider integration."},
-			"status":      schema.StringAttribute{Optional: true, Description: "Provider status hint (connected, degraded, disconnected)."},
-			"config_json": schema.StringAttribute{Optional: true, Sensitive: true, Description: "Provider-specific config JSON object."},
-			"last_error":  schema.StringAttribute{Optional: true, Description: "Last integration error string."},
-			"created_at":  schema.StringAttribute{Computed: true, Description: "Creation timestamp."},
-			"updated_at":  schema.StringAttribute{Computed: true, Description: "Last update timestamp."},
+			"id":            schema.StringAttribute{Computed: true, Description: "Resource ID (provider slug).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+			"tenant_id":     schema.StringAttribute{Computed: true, Description: "Tenant ID from provider config."},
+			"provider_name": schema.StringAttribute{Required: true, Description: "Browser provider slug: chrome, firefox, safari, island.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"name":          schema.StringAttribute{Optional: true, Description: "Display name for this provider integration."},
+			"enabled":       schema.BoolAttribute{Optional: true, Description: "Enable provider integration."},
+			"status":        schema.StringAttribute{Optional: true, Description: "Provider status hint (connected, degraded, disconnected)."},
+			"config_json":   schema.StringAttribute{Optional: true, Sensitive: true, Description: "Provider-specific config JSON object."},
+			"last_error":    schema.StringAttribute{Optional: true, Description: "Last integration error string."},
+			"created_at":    schema.StringAttribute{Computed: true, Description: "Creation timestamp."},
+			"updated_at":    schema.StringAttribute{Computed: true, Description: "Last update timestamp."},
 		},
 	}
 }
@@ -96,7 +96,7 @@ func (r *browserProviderResource) Read(ctx context.Context, req resource.ReadReq
 		resp.Diagnostics.AddError("Error reading browser providers", err.Error())
 		return
 	}
-	row, found := tfhelpers.FindByStringField(rows, "provider", state.Provider.ValueString())
+	row, found := tfhelpers.FindByStringField(rows, "provider", state.ProviderName.ValueString())
 	if !found {
 		resp.State.RemoveResource(ctx)
 		return
@@ -126,7 +126,7 @@ func (r *browserProviderResource) Delete(ctx context.Context, req resource.Delet
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	payload := map[string]any{"provider": state.Provider.ValueString(), "enabled": false}
+	payload := map[string]any{"provider": state.ProviderName.ValueString(), "enabled": false}
 	if !state.Name.IsNull() && !state.Name.IsUnknown() {
 		payload["name"] = state.Name.ValueString()
 	}
@@ -150,13 +150,13 @@ func (r *browserProviderResource) ImportState(ctx context.Context, req resource.
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), providerID)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("provider"), providerID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("provider_name"), providerID)...)
 }
 
 func (r *browserProviderResource) upsert(ctx context.Context, plan, prior browserProviderModel, diags *diag.Diagnostics) (browserProviderModel, bool) {
-	provider := strings.TrimSpace(plan.Provider.ValueString())
+	provider := strings.TrimSpace(plan.ProviderName.ValueString())
 	if provider == "" {
-		diags.AddAttributeError(path.Root("provider"), "Missing provider", "provider must be set.")
+		diags.AddAttributeError(path.Root("provider_name"), "Missing provider", "provider_name must be set.")
 		return browserProviderModel{}, false
 	}
 
@@ -202,7 +202,7 @@ func flattenBrowserProvider(row map[string]any, current browserProviderModel, te
 	next := current
 	next.ID = types.StringValue(tfhelpers.GetString(row, "provider"))
 	next.TenantID = types.StringValue(tenantID)
-	next.Provider = types.StringValue(tfhelpers.GetString(row, "provider"))
+	next.ProviderName = types.StringValue(tfhelpers.GetString(row, "provider"))
 	next.Name = nullableString(row, "name")
 	next.Enabled = types.BoolValue(tfhelpers.GetBool(row, "enabled"))
 	next.Status = nullableString(row, "status")

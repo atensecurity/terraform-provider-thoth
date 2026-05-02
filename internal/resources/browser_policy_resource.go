@@ -29,7 +29,7 @@ type browserPolicyModel struct {
 	TenantID           types.String `tfsdk:"tenant_id"`
 	PolicyID           types.String `tfsdk:"policy_id"`
 	Name               types.String `tfsdk:"name"`
-	Provider           types.String `tfsdk:"provider"`
+	ProviderName       types.String `tfsdk:"provider_name"`
 	EnforcementMode    types.String `tfsdk:"enforcement_mode"`
 	Active             types.Bool   `tfsdk:"active"`
 	Version            types.Int64  `tfsdk:"version"`
@@ -58,7 +58,7 @@ func (r *browserPolicyResource) Schema(_ context.Context, _ resource.SchemaReque
 			"tenant_id":            schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
 			"policy_id":            schema.StringAttribute{Optional: true, Computed: true, Description: "Policy ID. If omitted on create, GovAPI generates one."},
 			"name":                 schema.StringAttribute{Required: true, Description: "Policy display name."},
-			"provider":             schema.StringAttribute{Required: true, Description: "Browser provider slug.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"provider_name":        schema.StringAttribute{Required: true, Description: "Browser provider slug.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"enforcement_mode":     schema.StringAttribute{Optional: true, Description: "Policy mode: monitor or enforce."},
 			"active":               schema.BoolAttribute{Optional: true, Description: "Whether the policy is active."},
 			"version":              schema.Int64Attribute{Optional: true, Description: "Optional explicit policy version."},
@@ -101,7 +101,7 @@ func (r *browserPolicyResource) Read(ctx context.Context, req resource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	row, found, err := r.findPolicy(ctx, state.PolicyID.ValueString(), state.Provider.ValueString())
+	row, found, err := r.findPolicy(ctx, state.PolicyID.ValueString(), state.ProviderName.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading browser policy", err.Error())
 		return
@@ -142,7 +142,7 @@ func (r *browserPolicyResource) Delete(ctx context.Context, req resource.DeleteR
 	payload := map[string]any{
 		"policy_id": state.PolicyID.ValueString(),
 		"name":      state.Name.ValueString(),
-		"provider":  state.Provider.ValueString(),
+		"provider":  state.ProviderName.ValueString(),
 		"active":    false,
 	}
 	if !state.PolicyJSON.IsNull() && !state.PolicyJSON.IsUnknown() {
@@ -174,9 +174,9 @@ func (r *browserPolicyResource) ImportState(ctx context.Context, req resource.Im
 }
 
 func (r *browserPolicyResource) upsert(ctx context.Context, plan, prior browserPolicyModel, diags *diag.Diagnostics) (browserPolicyModel, bool) {
-	provider := strings.TrimSpace(plan.Provider.ValueString())
+	provider := strings.TrimSpace(plan.ProviderName.ValueString())
 	if provider == "" {
-		diags.AddAttributeError(path.Root("provider"), "Missing provider", "provider must be set.")
+		diags.AddAttributeError(path.Root("provider_name"), "Missing provider", "provider_name must be set.")
 		return browserPolicyModel{}, false
 	}
 	if strings.TrimSpace(plan.PolicyJSON.ValueString()) == "" {
@@ -253,7 +253,7 @@ func flattenBrowserPolicy(row map[string]any, current browserPolicyModel, tenant
 	next.PolicyID = types.StringValue(policyID)
 	next.TenantID = types.StringValue(tenantID)
 	next.Name = nullableString(row, "name")
-	next.Provider = nullableString(row, "provider")
+	next.ProviderName = nullableString(row, "provider")
 	next.EnforcementMode = nullableString(row, "enforcement_mode")
 	next.Active = types.BoolValue(tfhelpers.GetBool(row, "active"))
 	next.Version = types.Int64Value(tfhelpers.GetInt64(row, "version"))

@@ -27,7 +27,7 @@ type mdmProviderResource struct {
 type mdmProviderModel struct {
 	ID              types.String `tfsdk:"id"`
 	TenantID        types.String `tfsdk:"tenant_id"`
-	Provider        types.String `tfsdk:"provider"`
+	ProviderName    types.String `tfsdk:"provider_name"`
 	Name            types.String `tfsdk:"name"`
 	Enabled         types.Bool   `tfsdk:"enabled"`
 	ConfigJSON      types.String `tfsdk:"config_json"`
@@ -55,7 +55,7 @@ func (r *mdmProviderResource) Schema(_ context.Context, _ resource.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"id":               schema.StringAttribute{Computed: true, Description: "Resource ID (provider slug).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"tenant_id":        schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
-			"provider":         schema.StringAttribute{Required: true, Description: "Provider slug: jamf, intune, workspace_one, custom.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"provider_name":    schema.StringAttribute{Required: true, Description: "Provider slug: jamf, intune, workspace_one, custom.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"name":             schema.StringAttribute{Optional: true, Description: "Display name for the provider."},
 			"enabled":          schema.BoolAttribute{Optional: true, Description: "Enable the provider integration."},
 			"config_json":      schema.StringAttribute{Optional: true, Sensitive: true, Description: "Provider configuration JSON object."},
@@ -101,7 +101,7 @@ func (r *mdmProviderResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	provider := strings.TrimSpace(state.Provider.ValueString())
+	provider := strings.TrimSpace(state.ProviderName.ValueString())
 	row, found, err := r.findProvider(ctx, provider)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading MDM provider", err.Error())
@@ -140,7 +140,7 @@ func (r *mdmProviderResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	payload := map[string]any{
-		"provider": state.Provider.ValueString(),
+		"provider": state.ProviderName.ValueString(),
 		"name":     state.Name.ValueString(),
 		"enabled":  false,
 	}
@@ -166,15 +166,15 @@ func (r *mdmProviderResource) ImportState(ctx context.Context, req resource.Impo
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), providerID)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("provider"), providerID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("provider_name"), providerID)...)
 }
 
 func (r *mdmProviderResource) upsert(ctx context.Context, plan, prior mdmProviderModel, diags *diag.Diagnostics) (mdmProviderModel, bool) {
 	payload := map[string]any{
-		"provider": strings.TrimSpace(plan.Provider.ValueString()),
+		"provider": strings.TrimSpace(plan.ProviderName.ValueString()),
 	}
 	if payload["provider"] == "" {
-		diags.AddAttributeError(path.Root("provider"), "Missing provider", "provider must be set.")
+		diags.AddAttributeError(path.Root("provider_name"), "Missing provider", "provider_name must be set.")
 		return mdmProviderModel{}, false
 	}
 	if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
@@ -220,7 +220,7 @@ func flattenMDMProvider(row map[string]any, current mdmProviderModel, tenantID s
 	next := current
 	next.ID = types.StringValue(tfhelpers.GetString(row, "provider"))
 	next.TenantID = types.StringValue(tenantID)
-	next.Provider = types.StringValue(tfhelpers.GetString(row, "provider"))
+	next.ProviderName = types.StringValue(tfhelpers.GetString(row, "provider"))
 	if v := strings.TrimSpace(tfhelpers.GetString(row, "name")); v != "" {
 		next.Name = types.StringValue(v)
 	}

@@ -13,9 +13,9 @@ Creates or updates an MDM integration (Jamf, Intune, Workspace ONE, custom).
 
 ```terraform
 resource "thoth_mdm_provider" "jamf" {
-  provider = "jamf"
-  name     = "Jamf Pro"
-  enabled  = true
+  provider_name = "jamf"
+  name          = "Jamf Pro"
+  enabled       = true
 
   config_json = jsonencode({
     base_url      = var.jamf_base_url

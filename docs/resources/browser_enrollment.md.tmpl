@@ -13,9 +13,9 @@ Creates and updates browser enrollment state for users/devices.
 
 ```terraform
 resource "thoth_browser_enrollment" "eng_laptop" {
-  provider   = "chrome"
-  user_id    = "alice"
-  device_id  = "macbook-001"
-  status     = "active"
+  provider_name = "chrome"
+  user_id       = "alice"
+  device_id     = "macbook-001"
+  status        = "active"
 }
 ```

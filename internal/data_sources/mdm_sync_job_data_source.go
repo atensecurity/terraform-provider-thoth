@@ -21,7 +21,7 @@ type mdmSyncJobDataSource struct {
 
 type mdmSyncJobModel struct {
 	JobID           types.String `tfsdk:"job_id"`
-	Provider        types.String `tfsdk:"provider"`
+	ProviderName    types.String `tfsdk:"provider_name"`
 	Status          types.String `tfsdk:"status"`
 	SyncedEndpoints types.Int64  `tfsdk:"synced_endpoints"`
 	UnassignedCount types.Int64  `tfsdk:"unassigned_count"`
@@ -46,7 +46,7 @@ func (d *mdmSyncJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 		Description: "Reads a specific MDM sync job by job_id.",
 		Attributes: map[string]schema.Attribute{
 			"job_id":           schema.StringAttribute{Required: true, Description: "Sync job identifier."},
-			"provider":         schema.StringAttribute{Computed: true, Description: "Provider slug."},
+			"provider_name":    schema.StringAttribute{Computed: true, Description: "Provider slug."},
 			"status":           schema.StringAttribute{Computed: true, Description: "Job status."},
 			"synced_endpoints": schema.Int64Attribute{Computed: true, Description: "Synced endpoint count."},
 			"unassigned_count": schema.Int64Attribute{Computed: true, Description: "Unassigned device count."},
@@ -86,7 +86,7 @@ func (d *mdmSyncJobDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	state.Provider = nullableString(row, "provider")
+	state.ProviderName = nullableString(row, "provider")
 	state.Status = nullableString(row, "status")
 	state.SyncedEndpoints = types.Int64Value(tfhelpers.GetInt64(row, "synced_endpoints"))
 	state.UnassignedCount = types.Int64Value(tfhelpers.GetInt64(row, "unassigned_count"))

@@ -103,8 +103,8 @@ The release workflow expects the following repository secrets:
 
 Tag formats supported by the workflow:
 
-- `v0.1.0`
-- `v0.1.0-rc1`
+- `v0.1.1`
+- `v0.1.1-rc1`
 
 ## Governance And IP
 

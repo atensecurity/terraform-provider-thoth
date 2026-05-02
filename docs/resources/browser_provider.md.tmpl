@@ -13,8 +13,8 @@ Configures browser policy provider integration for a tenant.
 
 ```terraform
 resource "thoth_browser_provider" "chrome" {
-  provider = "chrome"
-  enabled  = true
+  provider_name = "chrome"
+  enabled       = true
   config_json = jsonencode({
     tenant = "acme"
   })
