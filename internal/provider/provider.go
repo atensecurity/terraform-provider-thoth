@@ -245,6 +245,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewAPIKeyResource,
 		resources.NewWebhookTestResource,
 		resources.NewEvidenceBackfillResource,
+		resources.NewDecisionFieldBackfillResource,
 		resources.NewPolicySyncResource,
 		resources.NewApprovalDecisionResource,
 		resources.NewPackAssignmentResource,
@@ -257,6 +258,7 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewTenantSettingsDataSource,
 		data_sources.NewGovernanceFeedDataSource,
 		data_sources.NewGovernanceToolsDataSource,
+		data_sources.NewGovernanceEvidenceSLOsDataSource,
 		data_sources.NewAPIKeyMetricsDataSource,
 		data_sources.NewMDMSyncJobDataSource,
 	}

@@ -80,6 +80,7 @@ See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/
 - `thoth_api_key`
 - `thoth_webhook_test`
 - `thoth_evidence_backfill`
+- `thoth_decision_field_backfill`
 - `thoth_policy_sync`
 - `thoth_approval_decision`
 - `thoth_pack_assignment`
@@ -90,6 +91,7 @@ See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/
 - `thoth_tenant_settings`
 - `thoth_governance_feed`
 - `thoth_governance_tools`
+- `thoth_governance_evidence_slos`
 - `thoth_api_key_metrics`
 - `thoth_mdm_sync_job`
 

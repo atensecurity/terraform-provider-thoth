@@ -506,6 +506,30 @@ func (c *Client) ListGovernanceTools(ctx context.Context, query map[string]strin
 	return out, err
 }
 
+func (c *Client) GetGovernanceEvidenceSLOs(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("governance/evidence-slos"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) BackfillGovernanceDecisionFields(
+	ctx context.Context,
+	query map[string]string,
+	payload map[string]any,
+) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(
+		ctx,
+		http.MethodPost,
+		c.tenantPath("governance/backfill-decision-fields"),
+		query,
+		payload,
+		&out,
+		false,
+	)
+	return out, err
+}
+
 func (c *Client) TriggerPolicySync(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("policies/sync"), nil, map[string]any{}, &out, false)
