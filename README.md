@@ -20,6 +20,16 @@ This provider exposes GovAPI-backed resources to manage:
 - JIT API keys
 - Webhook delivery test execution
 
+For runtime evidence exports, use the Thoth evidence-chain APIs:
+
+- `GET /:tenant-id/thoth/evidence/chain`
+- `GET /:tenant-id/thoth/sessions/:sessionId/evidence-bundle`
+
+or CLI equivalents:
+
+- `thothctl evidence chain --tenant-id <tenant> --json`
+- `thothctl evidence bundle --tenant-id <tenant> --session-id <id> --output <file>`
+
 ## Quick Start
 
 ```hcl

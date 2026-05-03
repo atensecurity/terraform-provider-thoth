@@ -4,6 +4,8 @@ set -euo pipefail
 THOTHCTL_BIN="${THOTHCTL_BIN:-thothctl}"
 THOTH_JSON_OUTPUT="${THOTH_JSON_OUTPUT:-true}"
 THOTH_TIMEOUT_SECONDS="${THOTH_TIMEOUT_SECONDS:-20}"
+THOTH_EVIDENCE_VERIFY="${THOTH_EVIDENCE_VERIFY:-false}"
+THOTH_EVIDENCE_CHAIN_LIMIT="${THOTH_EVIDENCE_CHAIN_LIMIT:-50}"
 
 require_env() {
 	local name="$1"
@@ -99,6 +101,18 @@ if [[ ${THOTH_JSON_OUTPUT} == "true" ]]; then
 	args+=(--json)
 fi
 
+auth_args=(
+	--govapi-url "${THOTH_GOVAPI_URL}"
+	--tenant-id "${THOTH_TENANT_ID}"
+	--timeout-seconds "${THOTH_TIMEOUT_SECONDS}"
+)
+if [[ -n ${THOTH_ADMIN_BEARER_TOKEN:-} ]]; then
+	auth_args+=(--auth-token "${THOTH_ADMIN_BEARER_TOKEN}")
+fi
+if [[ -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ]]; then
+	auth_args+=(--auth-token-file "${THOTH_ADMIN_BEARER_TOKEN_FILE}")
+fi
+
 redacted_args=("${args[@]}")
 if [[ -n ${THOTH_ADMIN_BEARER_TOKEN:-} ]]; then
 	for i in "${!redacted_args[@]}"; do
@@ -110,3 +124,16 @@ fi
 
 echo "Running ${THOTHCTL_BIN} ${redacted_args[*]}"
 "${THOTHCTL_BIN}" "${args[@]}"
+
+if [[ ${THOTH_EVIDENCE_VERIFY} == "true" ]]; then
+	verify_args=(evidence verify "${auth_args[@]}")
+	chain_args=(evidence chain "${auth_args[@]}" --limit "${THOTH_EVIDENCE_CHAIN_LIMIT}")
+	if [[ ${THOTH_JSON_OUTPUT} == "true" ]]; then
+		verify_args+=(--json)
+		chain_args+=(--json)
+	fi
+	echo "Running ${THOTHCTL_BIN} evidence verify [auth args redacted]"
+	"${THOTHCTL_BIN}" "${verify_args[@]}"
+	echo "Running ${THOTHCTL_BIN} evidence chain [auth args redacted]"
+	"${THOTHCTL_BIN}" "${chain_args[@]}"
+fi
