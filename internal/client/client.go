@@ -523,6 +523,12 @@ func (c *Client) ApplyPackToAgent(ctx context.Context, agentID string, payload m
 	return out, err
 }
 
+func (c *Client) ApplyPacksBulk(ctx context.Context, payload map[string]any) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("packs/apply"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) ListAgentPacks(ctx context.Context, agentID string) ([]map[string]any, error) {
 	out := map[string]any{}
 	path := c.tenantPath(fmt.Sprintf("agents/%s/packs", strings.TrimSpace(agentID)))

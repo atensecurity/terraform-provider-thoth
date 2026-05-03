@@ -247,6 +247,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewPolicySyncResource,
 		resources.NewApprovalDecisionResource,
 		resources.NewPackAssignmentResource,
+		resources.NewPackAssignmentBulkResource,
 	}
 }
 

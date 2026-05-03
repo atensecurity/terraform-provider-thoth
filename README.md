@@ -82,6 +82,7 @@ See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/
 - `thoth_policy_sync`
 - `thoth_approval_decision`
 - `thoth_pack_assignment`
+- `thoth_pack_assignment_bulk`
 
 ## Provider Data Sources
 
