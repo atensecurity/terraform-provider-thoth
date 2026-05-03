@@ -244,6 +244,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewBrowserEnrollmentResource,
 		resources.NewAPIKeyResource,
 		resources.NewWebhookTestResource,
+		resources.NewEvidenceBackfillResource,
 		resources.NewPolicySyncResource,
 		resources.NewApprovalDecisionResource,
 		resources.NewPackAssignmentResource,

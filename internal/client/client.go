@@ -147,6 +147,11 @@ func (c *Client) tenantPath(path string) string {
 	return fmt.Sprintf("/%s/thoth/%s", c.tenantID, trimmed)
 }
 
+func (c *Client) governancePath(path string) string {
+	trimmed := strings.TrimPrefix(strings.TrimSpace(path), "/")
+	return fmt.Sprintf("/%s/governance/%s", c.tenantID, trimmed)
+}
+
 func (c *Client) doJSON(
 	ctx context.Context,
 	method string,
@@ -347,6 +352,24 @@ func (c *Client) UpdateTenantSettings(ctx context.Context, payload map[string]an
 func (c *Client) TestWebhook(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("settings/webhook/test"), nil, map[string]any{}, &out, false)
+	return out, err
+}
+
+func (c *Client) BackfillGovernanceEvidence(
+	ctx context.Context,
+	query map[string]string,
+	payload map[string]any,
+) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(
+		ctx,
+		http.MethodPost,
+		c.governancePath("evidence/thoth/backfill"),
+		query,
+		payload,
+		&out,
+		false,
+	)
 	return out, err
 }
 

@@ -79,6 +79,7 @@ See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/
 - `thoth_browser_enrollment`
 - `thoth_api_key`
 - `thoth_webhook_test`
+- `thoth_evidence_backfill`
 - `thoth_policy_sync`
 - `thoth_approval_decision`
 - `thoth_pack_assignment`

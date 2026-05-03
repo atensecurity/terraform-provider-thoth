@@ -1,0 +1,22 @@
+---
+page_title: "thoth_evidence_backfill Resource"
+subcategory: "Governance"
+description: |-
+  Materializes governance evidence records from Thoth behavioral events.
+---
+
+# thoth_evidence_backfill
+
+Triggers `POST /:tenant-id/governance/evidence/thoth/backfill` and stores execution stats.
+
+## Example Usage
+
+```terraform
+resource "thoth_evidence_backfill" "r8" {
+  trigger                = "2026-05-r8"
+  limit                  = 200
+  include_blocked_events = true
+  dry_run                = false
+  integration_id         = "thoth-runtime"
+}
+```
