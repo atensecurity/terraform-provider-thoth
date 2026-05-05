@@ -37,6 +37,8 @@ type providerModel struct {
 	ApexDomain            types.String `tfsdk:"apex_domain"`
 	AdminBearerToken      types.String `tfsdk:"admin_bearer_token"`
 	AdminBearerTokenFile  types.String `tfsdk:"admin_bearer_token_file"`
+	OrgAPIKey             types.String `tfsdk:"org_api_key"`
+	OrgAPIKeyFile         types.String `tfsdk:"org_api_key_file"`
 	RetryMaxAttempts      types.Int64  `tfsdk:"retry_max_attempts"`
 	RetryBaseDelayMs      types.Int64  `tfsdk:"retry_base_delay_ms"`
 	RetryMaxDelayMs       types.Int64  `tfsdk:"retry_max_delay_ms"`
@@ -89,6 +91,15 @@ func (p *thothProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 			"admin_bearer_token_file": schema.StringAttribute{
 				Optional:    true,
 				Description: "Path to a file containing the admin bearer token.",
+			},
+			"org_api_key": schema.StringAttribute{
+				Optional:    true,
+				Sensitive:   true,
+				Description: "Organization API key used for non-interactive CI/CD control-plane operations.",
+			},
+			"org_api_key_file": schema.StringAttribute{
+				Optional:    true,
+				Description: "Path to a file containing the organization API key.",
 			},
 			"retry_max_attempts": schema.Int64Attribute{
 				Optional:    true,
@@ -175,12 +186,30 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	token := strings.TrimSpace(config.AdminBearerToken.ValueString())
 	tokenFile := strings.TrimSpace(config.AdminBearerTokenFile.ValueString())
+	orgAPIKey := strings.TrimSpace(config.OrgAPIKey.ValueString())
+	orgAPIKeyFile := strings.TrimSpace(config.OrgAPIKeyFile.ValueString())
+	envOrgAPIKey := strings.TrimSpace(os.Getenv("THOTH_API_KEY"))
 
-	if token == "" && tokenFile == "" {
+	if token != "" && orgAPIKey != "" {
+		resp.Diagnostics.AddError(
+			"Conflicting credentials",
+			"Set only one auth method: admin_bearer_token/admin_bearer_token_file or org_api_key/org_api_key_file.",
+		)
+		return
+	}
+	if tokenFile != "" && orgAPIKeyFile != "" {
+		resp.Diagnostics.AddError(
+			"Conflicting credential files",
+			"Set only one auth method file: admin_bearer_token_file or org_api_key_file.",
+		)
+		return
+	}
+
+	if token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" && envOrgAPIKey == "" {
 		resp.Diagnostics.AddAttributeError(
-			path.Root("admin_bearer_token"),
+			path.Root("org_api_key"),
 			"Missing credentials",
-			"Set admin_bearer_token or admin_bearer_token_file.",
+			"Set org_api_key/org_api_key_file (recommended for CI/CD), export THOTH_API_KEY, or configure admin_bearer_token/admin_bearer_token_file.",
 		)
 		return
 	}
@@ -205,11 +234,42 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			return
 		}
 	}
+	if orgAPIKey == "" && orgAPIKeyFile != "" {
+		b, err := os.ReadFile(orgAPIKeyFile)
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("org_api_key_file"),
+				"Cannot read API key file",
+				fmt.Sprintf("Unable to read %q: %v", orgAPIKeyFile, err),
+			)
+			return
+		}
+		orgAPIKey = strings.TrimSpace(string(b))
+		if orgAPIKey == "" {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("org_api_key_file"),
+				"Empty API key file",
+				fmt.Sprintf("API key file %q is empty.", orgAPIKeyFile),
+			)
+			return
+		}
+	}
+	if token != "" && orgAPIKey != "" {
+		resp.Diagnostics.AddError(
+			"Conflicting credentials",
+			"Both bearer token and org API key resolved. Configure only one auth method.",
+		)
+		return
+	}
+	if token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" {
+		orgAPIKey = envOrgAPIKey
+	}
 
 	cfg := client.Config{
 		BaseURL:               apiBaseURL,
 		TenantID:              tenantID,
 		AuthToken:             token,
+		APIKey:                orgAPIKey,
 		RetryMaxAttempts:      int(int64ValueWithDefault(config.RetryMaxAttempts, 4)),
 		RetryBaseDelay:        time.Duration(int64ValueWithDefault(config.RetryBaseDelayMs, 300)) * time.Millisecond,
 		RetryMaxDelay:         time.Duration(int64ValueWithDefault(config.RetryMaxDelayMs, 5000)) * time.Millisecond,

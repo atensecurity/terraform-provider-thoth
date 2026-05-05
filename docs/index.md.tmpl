@@ -22,8 +22,8 @@ terraform {
 }
 
 provider "thoth" {
-  tenant_id          = "acme"
-  apex_domain        = "atensecurity.com" # optional
-  admin_bearer_token = var.admin_bearer_token
+  tenant_id   = "acme"
+  apex_domain = "atensecurity.com" # optional
+  org_api_key = var.org_api_key
 }
 ```

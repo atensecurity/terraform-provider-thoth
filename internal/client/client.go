@@ -28,6 +28,7 @@ type Config struct {
 	BaseURL               string
 	TenantID              string
 	AuthToken             string
+	APIKey                string
 	RetryMaxAttempts      int
 	RetryBaseDelay        time.Duration
 	RetryMaxDelay         time.Duration
@@ -61,6 +62,7 @@ type Client struct {
 	baseURL          string
 	tenantID         string
 	authToken        string
+	apiKey           string
 	httpClient       *http.Client
 	retryMaxAttempts int
 	retryBaseDelay   time.Duration
@@ -82,8 +84,12 @@ func New(cfg Config) (*Client, error) {
 		return nil, errors.New("tenant_id cannot be empty")
 	}
 	authToken := strings.TrimSpace(cfg.AuthToken)
-	if authToken == "" {
-		return nil, errors.New("auth token cannot be empty")
+	apiKey := strings.TrimSpace(cfg.APIKey)
+	if authToken == "" && apiKey == "" {
+		return nil, errors.New("either auth token or org API key must be configured")
+	}
+	if authToken != "" && apiKey != "" {
+		return nil, errors.New("configure only one auth method: auth token or org API key")
 	}
 
 	retryMaxAttempts := cfg.RetryMaxAttempts
@@ -130,6 +136,7 @@ func New(cfg Config) (*Client, error) {
 		baseURL:          baseURL,
 		tenantID:         tenantID,
 		authToken:        authToken,
+		apiKey:           apiKey,
 		httpClient:       &http.Client{Timeout: requestTimeout, Transport: transport},
 		retryMaxAttempts: retryMaxAttempts,
 		retryBaseDelay:   retryBaseDelay,
@@ -189,7 +196,11 @@ func (c *Client) doJSON(
 			return fmt.Errorf("build request: %w", err)
 		}
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Authorization", "Bearer "+c.authToken)
+		if c.apiKey != "" {
+			req.Header.Set("X-Api-Key", c.apiKey)
+		} else {
+			req.Header.Set("Authorization", "Bearer "+c.authToken)
+		}
 		if payload != nil {
 			req.Header.Set("Content-Type", "application/json")
 		}

@@ -47,7 +47,7 @@ terraform {
 provider "thoth" {
   tenant_id               = var.tenant_id
   apex_domain             = "atensecurity.com" # optional, defaults to atensecurity.com
-  admin_bearer_token      = var.admin_bearer_token
+  org_api_key             = var.org_api_key
   request_timeout_seconds = 30
 }
 
@@ -68,6 +68,11 @@ When `api_base_url` is omitted, the provider derives it as:
 `https://grid.<tenant_id>.<apex_domain>`.
 
 See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic) for a full end-to-end example.
+
+For legacy interactive workflows, `admin_bearer_token` and
+`admin_bearer_token_file` remain supported.
+
+For CI/CD, you can also export `THOTH_API_KEY` and omit explicit auth fields.
 
 ## Provider Resources
 

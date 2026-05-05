@@ -22,6 +22,8 @@ Thoth provider for headless AI Governance Control Plane operations.
 
 - `admin_bearer_token` (String, Sensitive) Admin bearer token used for authenticated GovAPI requests.
 - `admin_bearer_token_file` (String) Path to a file containing the admin bearer token.
+- `org_api_key` (String, Sensitive) Organization API key used for non-interactive CI/CD control-plane operations.
+- `org_api_key_file` (String) Path to a file containing the organization API key.
 - `apex_domain` (String) Apex domain used to derive GovAPI host when api_base_url is omitted. Defaults to atensecurity.com.
 - `api_base_url` (String) GovAPI base URL override. When omitted, provider derives https://grid.<tenant_id>.<apex_domain>.
 - `insecure_skip_tls_verify` (Boolean) Skip TLS certificate verification (development/testing only).

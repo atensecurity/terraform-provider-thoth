@@ -9,8 +9,8 @@ variable "apex_domain" {
   default     = "atensecurity.com"
 }
 
-variable "admin_bearer_token" {
-  description = "Admin bearer token used for Thoth control-plane APIs."
+variable "org_api_key" {
+  description = "Org-level API key used for Thoth control-plane APIs in CI/CD."
   type        = string
   sensitive   = true
 }

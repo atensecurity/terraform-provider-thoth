@@ -10,9 +10,9 @@ terraform {
 }
 
 provider "thoth" {
-  tenant_id          = var.tenant_id
-  apex_domain        = var.apex_domain
-  admin_bearer_token = var.admin_bearer_token
+  tenant_id   = var.tenant_id
+  apex_domain = var.apex_domain
+  org_api_key = var.org_api_key
 }
 
 resource "thoth_tenant_settings" "tenant" {

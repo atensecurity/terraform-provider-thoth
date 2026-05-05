@@ -9,9 +9,9 @@ variable "tenant_id" {
   description = "Tenant slug."
 }
 
-variable "admin_bearer_token" {
+variable "org_api_key" {
   type        = string
-  description = "Admin bearer token for GovAPI."
+  description = "Org API key for GovAPI."
   ephemeral   = true
 }
 

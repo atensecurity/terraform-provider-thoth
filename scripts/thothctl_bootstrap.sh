@@ -18,8 +18,15 @@ require_env() {
 require_env THOTH_GOVAPI_URL
 require_env THOTH_TENANT_ID
 
-if [[ -z ${THOTH_ADMIN_BEARER_TOKEN:-} && -z ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ]]; then
-	echo "error: set THOTH_ADMIN_BEARER_TOKEN or THOTH_ADMIN_BEARER_TOKEN_FILE" >&2
+THOTH_ORG_API_KEY_EFFECTIVE="${THOTH_ORG_API_KEY:-${THOTH_API_KEY:-}}"
+
+if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} && ( -n ${THOTH_ADMIN_BEARER_TOKEN:-} || -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ) ]]; then
+	echo "error: set either org API key auth (THOTH_ORG_API_KEY/THOTH_API_KEY) or bearer token auth (THOTH_ADMIN_BEARER_TOKEN/THOTH_ADMIN_BEARER_TOKEN_FILE), not both" >&2
+	exit 1
+fi
+
+if [[ -z ${THOTH_ORG_API_KEY_EFFECTIVE} && -z ${THOTH_ADMIN_BEARER_TOKEN:-} && -z ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ]]; then
+	echo "error: set THOTH_ORG_API_KEY or THOTH_API_KEY (recommended), or THOTH_ADMIN_BEARER_TOKEN / THOTH_ADMIN_BEARER_TOKEN_FILE" >&2
 	exit 1
 fi
 
@@ -41,6 +48,9 @@ fi
 
 if [[ -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ]]; then
 	args+=(--auth-token-file "${THOTH_ADMIN_BEARER_TOKEN_FILE}")
+fi
+if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} ]]; then
+	args+=(--org-api-key "${THOTH_ORG_API_KEY_EFFECTIVE}")
 fi
 
 if [[ -n ${THOTH_COMPLIANCE_PROFILE:-} ]]; then
@@ -112,11 +122,21 @@ fi
 if [[ -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ]]; then
 	auth_args+=(--auth-token-file "${THOTH_ADMIN_BEARER_TOKEN_FILE}")
 fi
+if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} ]]; then
+	auth_args+=(--org-api-key "${THOTH_ORG_API_KEY_EFFECTIVE}")
+fi
 
 redacted_args=("${args[@]}")
 if [[ -n ${THOTH_ADMIN_BEARER_TOKEN:-} ]]; then
 	for i in "${!redacted_args[@]}"; do
 		if [[ ${redacted_args[$i]} == "${THOTH_ADMIN_BEARER_TOKEN}" ]]; then
+			redacted_args[$i]="***REDACTED***"
+		fi
+	done
+fi
+if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} ]]; then
+	for i in "${!redacted_args[@]}"; do
+		if [[ ${redacted_args[$i]} == "${THOTH_ORG_API_KEY_EFFECTIVE}" ]]; then
 			redacted_args[$i]="***REDACTED***"
 		fi
 	done
