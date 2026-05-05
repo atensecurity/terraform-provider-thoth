@@ -107,6 +107,36 @@ jobs:
           env GOCACHE=/tmp/gocache \
             go build -ldflags "-X github.com/atensecurity/terraform-provider-thoth.version=${RELEASE_VERSION}" ./...
 
+      - name: Extract release notes from CHANGELOG.md
+        shell: bash
+        env:
+          CURRENT_TAG: ${{ steps.release_tag.outputs.current_tag }}
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${CURRENT_TAG#v}"
+
+          NOTES="$(
+            awk -v version="${RELEASE_VERSION}" '
+              $1 == "##" {
+                if (capture && $2 != version) { exit }
+                if ($2 == version) { capture=1 }
+              }
+              capture {print}
+            ' CHANGELOG.md
+          )"
+
+          if [[ -z "${NOTES//[[:space:]]/}" ]]; then
+            echo "Missing release notes in CHANGELOG.md for version ${RELEASE_VERSION}" >&2
+            echo "Expected section heading: ## ${RELEASE_VERSION} - YYYY-MM-DD" >&2
+            exit 1
+          fi
+
+          {
+            echo "RELEASE_NOTES<<EOF"
+            echo "${NOTES}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
       - name: Import release signing key
         id: gpg
         shell: bash
