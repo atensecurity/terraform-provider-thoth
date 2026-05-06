@@ -95,11 +95,11 @@ func (p *thothProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 			"org_api_key": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "Organization API key used for non-interactive CI/CD control-plane operations.",
+				Description: "Organization-scoped API key used for non-interactive CI/CD control-plane operations.",
 			},
 			"org_api_key_file": schema.StringAttribute{
 				Optional:    true,
-				Description: "Path to a file containing the organization API key.",
+				Description: "Path to a file containing the organization-scoped API key.",
 			},
 			"retry_max_attempts": schema.Int64Attribute{
 				Optional:    true,
@@ -209,7 +209,7 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		resp.Diagnostics.AddAttributeError(
 			path.Root("org_api_key"),
 			"Missing credentials",
-			"Set org_api_key/org_api_key_file (recommended for CI/CD), export THOTH_API_KEY, or configure admin_bearer_token/admin_bearer_token_file.",
+			"Set org_api_key/org_api_key_file (recommended for CI/CD), export THOTH_API_KEY (must be org-scoped), or configure admin_bearer_token/admin_bearer_token_file.",
 		)
 		return
 	}
@@ -303,6 +303,10 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewBrowserPolicyResource,
 		resources.NewBrowserEnrollmentResource,
 		resources.NewAPIKeyResource,
+		resources.NewFleetAPIKeyResource,
+		resources.NewEndpointAPIKeyResource,
+		resources.NewAgentAPIKeyResource,
+		resources.NewFleetResource,
 		resources.NewWebhookTestResource,
 		resources.NewEvidenceBackfillResource,
 		resources.NewDecisionFieldBackfillResource,
@@ -315,12 +319,36 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 
 func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		data_sources.NewApprovalsDataSource,
+		data_sources.NewAPIKeyAuthorizationDataSource,
+		data_sources.NewAPIKeysDataSource,
+		data_sources.NewBillingPricingDataSource,
+		data_sources.NewBillingMonthlyCostDataSource,
+		data_sources.NewBillingInvoicesDataSource,
+		data_sources.NewBillingReportsDataSource,
+		data_sources.NewBillingReportDataSource,
+		data_sources.NewEvidenceChainDataSource,
+		data_sources.NewEvidenceVerifyDataSource,
+		data_sources.NewEvidenceBundleDataSource,
+		data_sources.NewFleetsDataSource,
+		data_sources.NewFleetDataSource,
 		data_sources.NewTenantSettingsDataSource,
+		data_sources.NewEndpointsDataSource,
+		data_sources.NewEndpointStatsDataSource,
 		data_sources.NewGovernanceFeedDataSource,
+		data_sources.NewGovernancePacksDataSource,
+		data_sources.NewGovernanceRuntimeStatusDataSource,
+		data_sources.NewGovernanceDay7ReportDataSource,
+		data_sources.NewGovernanceReportsOverviewDataSource,
+		data_sources.NewGovernanceCostReportDataSource,
 		data_sources.NewGovernanceToolsDataSource,
 		data_sources.NewGovernanceEvidenceSLOsDataSource,
 		data_sources.NewAPIKeyMetricsDataSource,
+		data_sources.NewMDMProvidersDataSource,
 		data_sources.NewMDMSyncJobDataSource,
+		data_sources.NewBrowserProvidersDataSource,
+		data_sources.NewBrowserPoliciesDataSource,
+		data_sources.NewBrowserEnrollmentsDataSource,
 	}
 }
 

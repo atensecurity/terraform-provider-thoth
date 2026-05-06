@@ -159,6 +159,11 @@ func (c *Client) governancePath(path string) string {
 	return fmt.Sprintf("/%s/governance/%s", c.tenantID, trimmed)
 }
 
+func (c *Client) billingPath(path string) string {
+	trimmed := strings.TrimPrefix(strings.TrimSpace(path), "/")
+	return fmt.Sprintf("/%s/billing/%s", c.tenantID, trimmed)
+}
+
 func (c *Client) doJSON(
 	ctx context.Context,
 	method string,
@@ -499,9 +504,73 @@ func (c *Client) RevokeAPIKey(ctx context.Context, keyID string) (map[string]any
 	return out, err
 }
 
+func (c *Client) AuthorizeAPIKey(ctx context.Context, keyID string, payload map[string]any) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("api-keys/%s/authorize", strings.TrimSpace(keyID)))
+	err := c.doJSON(ctx, http.MethodPost, path, nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) GetAPIKeyMetrics(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("api-keys/metrics"), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetEvidenceChain(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("evidence/chain"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) VerifyEvidenceChain(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.governancePath("evidence/verify-chain"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetSessionEvidenceBundle(ctx context.Context, sessionID string) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("sessions/%s/evidence-bundle", strings.TrimSpace(sessionID)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetBillingPricing(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("pricing"), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetBillingMonthlyCost(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("monthly-cost"), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ListBillingInvoices(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("invoices"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ListBillingReports(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("reports"), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetBillingReport(ctx context.Context, year, month int64) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(
+		ctx,
+		http.MethodGet,
+		c.billingPath(fmt.Sprintf("reports/%d/%d", year, month)),
+		nil,
+		nil,
+		&out,
+		true,
+	)
 	return out, err
 }
 
@@ -553,6 +622,12 @@ func (c *Client) GetPolicySyncStatus(ctx context.Context) (map[string]any, error
 	return out, err
 }
 
+func (c *Client) ListApprovalsWithQuery(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("approvals"), query, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) ResolveApproval(ctx context.Context, approvalID, decision string) (map[string]any, error) {
 	out := map[string]any{}
 	path := c.tenantPath(fmt.Sprintf("approvals/%s/resolve", strings.TrimSpace(approvalID)))
@@ -562,12 +637,11 @@ func (c *Client) ResolveApproval(ctx context.Context, approvalID, decision strin
 }
 
 func (c *Client) ListApprovals(ctx context.Context, status string) ([]map[string]any, error) {
-	out := map[string]any{}
 	query := map[string]string{}
 	if strings.TrimSpace(status) != "" {
 		query["status"] = strings.TrimSpace(status)
 	}
-	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("approvals"), query, nil, &out, true)
+	out, err := c.ListApprovalsWithQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -646,6 +720,36 @@ func (c *Client) DeleteFleet(ctx context.Context, fleetID string) error {
 	return c.doJSON(ctx, http.MethodDelete, path, nil, nil, nil, false)
 }
 
+func (c *Client) ListGovernancePacks(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("packs"), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetPackRuntimeStatus(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("packs/runtime-status"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetDay7Report(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports/day7"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetReportsOverview(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports/overview"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetCostReport(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports/cost"), query, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) ListEndpoints(ctx context.Context, env, fleetID string) ([]map[string]any, error) {
 	out := map[string]any{}
 	query := map[string]string{}
@@ -660,6 +764,12 @@ func (c *Client) ListEndpoints(ctx context.Context, env, fleetID string) ([]map[
 		return nil, err
 	}
 	return extractDataArray(out)
+}
+
+func (c *Client) GetEndpointStats(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("endpoints/stats"), nil, nil, &out, true)
+	return out, err
 }
 
 func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (map[string]any, error) {

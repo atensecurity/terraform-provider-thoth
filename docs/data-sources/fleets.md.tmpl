@@ -1,0 +1,14 @@
+---
+page_title: "thoth_fleets Data Source"
+subcategory: "Fleet"
+description: |-
+  Reads fleets with optional status, region, and provider filters.
+---
+
+# data source: thoth_fleets
+
+```terraform
+data "thoth_fleets" "active" {
+  status = "active"
+}
+```

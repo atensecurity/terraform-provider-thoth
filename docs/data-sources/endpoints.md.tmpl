@@ -1,0 +1,15 @@
+---
+page_title: "thoth_endpoints Data Source"
+subcategory: "Fleet"
+description: |-
+  Reads endpoint inventory for fleet operations.
+---
+
+# data source: thoth_endpoints
+
+```terraform
+data "thoth_endpoints" "prod_fleet" {
+  environment = "prod"
+  fleet_id    = "fleet-ops"
+}
+```

@@ -1,0 +1,14 @@
+---
+page_title: "thoth_evidence_verify Data Source"
+subcategory: "Governance"
+description: |-
+  Verifies governance evidence WORM chain integrity for the tenant.
+---
+
+# data source: thoth_evidence_verify
+
+```terraform
+data "thoth_evidence_verify" "chain" {
+  limit = 200
+}
+```

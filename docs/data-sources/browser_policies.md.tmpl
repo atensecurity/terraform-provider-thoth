@@ -1,0 +1,14 @@
+---
+page_title: "thoth_browser_policies Data Source"
+subcategory: "Browser"
+description: |-
+  Reads browser policies with optional provider filter.
+---
+
+# data source: thoth_browser_policies
+
+```terraform
+data "thoth_browser_policies" "chrome" {
+  provider = "google_chrome"
+}
+```

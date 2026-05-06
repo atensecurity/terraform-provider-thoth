@@ -1,0 +1,14 @@
+---
+page_title: "thoth_billing_invoices Data Source"
+subcategory: "Billing"
+description: |-
+  Reads recent billing invoices and totals.
+---
+
+# data source: thoth_billing_invoices
+
+```terraform
+data "thoth_billing_invoices" "recent" {
+  limit = 20
+}
+```

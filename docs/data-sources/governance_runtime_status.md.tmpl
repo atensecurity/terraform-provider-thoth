@@ -1,0 +1,14 @@
+---
+page_title: "thoth_governance_runtime_status Data Source"
+subcategory: "Governance"
+description: |-
+  Reads runtime pack enforcement status and drift summary.
+---
+
+# data source: thoth_governance_runtime_status
+
+```terraform
+data "thoth_governance_runtime_status" "prod" {
+  environment = "prod"
+}
+```

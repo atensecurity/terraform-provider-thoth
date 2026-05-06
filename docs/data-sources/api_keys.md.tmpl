@@ -1,0 +1,15 @@
+---
+page_title: "thoth_api_keys Data Source"
+subcategory: "Access"
+description: |-
+  Reads API keys with optional scope and active filters.
+---
+
+# data source: thoth_api_keys
+
+```terraform
+data "thoth_api_keys" "org_active" {
+  scope_level = "organization"
+  active_only = true
+}
+```

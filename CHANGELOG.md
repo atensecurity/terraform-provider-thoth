@@ -2,6 +2,37 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.4 - 2026-05-06
+
+### Added
+
+- `thoth_api_keys` data source for API key inventory queries with scope and active-state filtering.
+- New scope-specific API key resources:
+  `thoth_fleet_api_key`, `thoth_endpoint_api_key`, `thoth_agent_api_key`.
+- Fleet lifecycle coverage:
+  `thoth_fleet` resource plus `thoth_fleet`, `thoth_fleets`, `thoth_endpoints`, and
+  `thoth_endpoint_stats` data sources.
+- Governance evidence read coverage:
+  `thoth_evidence_bundle`, `thoth_evidence_chain`, and `thoth_evidence_verify`
+  data sources.
+- MDM and browser inventory coverage:
+  `thoth_mdm_providers`, `thoth_browser_providers`, `thoth_browser_policies`, and
+  `thoth_browser_enrollments` data sources.
+
+### Changed
+
+- Provider examples and docs now target `~> 0.1.4` for next-release guidance.
+- Provider registry docs include expanded authentication guidance with explicit
+  org-scoped `THOTH_API_KEY` requirements and auth precedence rules.
+- `thoth_api_key` now rejects `organization` scope creation and recommends
+  out-of-band org key creation via `thothctl`.
+- `thoth_api_key` scope-driven creation is deprecated in favor of dedicated
+  scoped resources.
+
+### Compatibility
+
+- No breaking schema changes in this release.
+
 ## 0.1.3 - 2026-05-05
 
 ### Added

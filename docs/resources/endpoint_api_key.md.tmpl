@@ -1,0 +1,26 @@
+---
+page_title: "thoth_endpoint_api_key Resource"
+subcategory: "Access"
+description: |-
+  Creates scoped JIT API keys bound to a single endpoint.
+---
+
+# thoth_endpoint_api_key
+
+Issues short-lived endpoint-scoped API keys.
+
+Organization-scoped keys are intentionally not creatable through Terraform/Pulumi.
+Create organization keys with `thothctl api-keys create ...` and pass them to
+the provider via `THOTH_API_KEY` or `org_api_key`.
+
+## Example Usage
+
+```terraform
+resource "thoth_endpoint_api_key" "endpoint_exec" {
+  name            = "endpoint-exec"
+  scope_target_id = "endpoint-123"
+  permissions     = ["execute", "read"]
+  ttl_seconds     = 1800
+  jit_reason      = "endpoint-remediation"
+}
+```

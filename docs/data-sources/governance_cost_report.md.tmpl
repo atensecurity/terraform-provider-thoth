@@ -1,0 +1,15 @@
+---
+page_title: "thoth_governance_cost_report Data Source"
+subcategory: "Governance"
+description: |-
+  Reads governance token-usage cost report data.
+---
+
+# data source: thoth_governance_cost_report
+
+```terraform
+data "thoth_governance_cost_report" "cost" {
+  days = 30
+  rate = 0.003
+}
+```

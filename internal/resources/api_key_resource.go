@@ -2,8 +2,10 @@ package resources
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -11,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/atensecurity/terraform-provider-thoth/internal/client"
@@ -19,6 +22,13 @@ import (
 
 var _ resource.Resource = &apiKeyResource{}
 var _ resource.ResourceWithImportState = &apiKeyResource{}
+
+const (
+	apiKeyScopeFleet        = "fleet"
+	apiKeyScopeEndpoint     = "endpoint"
+	apiKeyScopeAgent        = "agent"
+	apiKeyScopeOrganization = "organization"
+)
 
 type apiKeyResource struct {
 	client   *client.Client
@@ -55,12 +65,26 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 	resp.Schema = schema.Schema{
 		Description: "Creates and manages tenant-scoped JIT Thoth API keys.",
 		Attributes: map[string]schema.Attribute{
-			"id":              schema.StringAttribute{Computed: true, Description: "Resource ID (key ID).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"tenant_id":       schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
-			"key_id":          schema.StringAttribute{Computed: true, Description: "GovAPI key identifier."},
-			"name":            schema.StringAttribute{Optional: true, Description: "Display name for the API key.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"scope_level":     schema.StringAttribute{Required: true, Description: "Scope level: organization, fleet, endpoint, agent.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"scope_target_id": schema.StringAttribute{Optional: true, Description: "Target ID for scope level (not required for organization).", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"id":        schema.StringAttribute{Computed: true, Description: "Resource ID (key ID).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+			"tenant_id": schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
+			"key_id":    schema.StringAttribute{Computed: true, Description: "GovAPI key identifier."},
+			"name":      schema.StringAttribute{Optional: true, Description: "Display name for the API key.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"scope_level": schema.StringAttribute{
+				Required: true,
+				Description: "Scope level for issued key. Supported in provider: fleet, endpoint, agent. " +
+					"Organization keys must be created out-of-band via thothctl.",
+				DeprecationMessage: "Use thoth_fleet_api_key, thoth_endpoint_api_key, or thoth_agent_api_key instead.",
+				PlanModifiers:      []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						apiKeyScopeFleet,
+						apiKeyScopeEndpoint,
+						apiKeyScopeAgent,
+						apiKeyScopeOrganization,
+					),
+				},
+			},
+			"scope_target_id": schema.StringAttribute{Optional: true, Description: "Target ID for the selected scope level. Required for fleet, endpoint, and agent scopes.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"permissions":     schema.ListAttribute{Required: true, ElementType: types.StringType, Description: "Allowed permissions: read, write, execute.", PlanModifiers: []planmodifier.List{listplanmodifier.RequiresReplace()}},
 			"ttl_seconds":     schema.Int64Attribute{Optional: true, Description: "TTL in seconds for key expiry.", PlanModifiers: []planmodifier.Int64{int64planmodifier.RequiresReplace()}},
 			"jit_reason":      schema.StringAttribute{Optional: true, Description: "Audit reason for just-in-time issuance.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
@@ -90,14 +114,25 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	scopeLevel := strings.ToLower(strings.TrimSpace(plan.ScopeLevel.ValueString()))
+	scopeTargetID := strings.TrimSpace(plan.ScopeTargetID.ValueString())
+	if err := validateAPIKeyScopeForCreate(scopeLevel, scopeTargetID); err != nil {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("scope_level"),
+			"Unsupported API key scope for provider-managed creation",
+			err.Error(),
+		)
+		return
+	}
+
 	payload := map[string]any{
-		"scope_level": strings.TrimSpace(plan.ScopeLevel.ValueString()),
+		"scope_level": scopeLevel,
 	}
 	if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
 		payload["name"] = plan.Name.ValueString()
 	}
-	if !plan.ScopeTargetID.IsNull() && !plan.ScopeTargetID.IsUnknown() {
-		payload["scope_target_id"] = plan.ScopeTargetID.ValueString()
+	if scopeTargetID != "" {
+		payload["scope_target_id"] = scopeTargetID
 	}
 	if !plan.TTLSeconds.IsNull() && !plan.TTLSeconds.IsUnknown() {
 		payload["ttl_seconds"] = plan.TTLSeconds.ValueInt64()
@@ -125,6 +160,34 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	next := flattenAPIKeyCreated(row, plan, r.tenantID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
+}
+
+func validateAPIKeyScopeForCreate(scopeLevel string, scopeTargetID string) error {
+	switch scopeLevel {
+	case apiKeyScopeOrganization:
+		return errorsForOrganizationScope()
+	case apiKeyScopeFleet, apiKeyScopeEndpoint, apiKeyScopeAgent:
+		if scopeTargetID == "" {
+			return fmt.Errorf("scope_target_id must be set when scope_level is %q", scopeLevel)
+		}
+		return nil
+	default:
+		return fmt.Errorf(
+			"invalid scope_level %q: supported values are %q, %q, %q",
+			scopeLevel,
+			apiKeyScopeFleet,
+			apiKeyScopeEndpoint,
+			apiKeyScopeAgent,
+		)
+	}
+}
+
+func errorsForOrganizationScope() error {
+	return fmt.Errorf(
+		"organization-scoped API keys cannot be created by this provider. " +
+			"Create org keys with thothctl (for example: `thothctl api-keys create --scope organization ...`) " +
+			"and provide them to Terraform/Pulumi via THOTH_API_KEY or org_api_key.",
+	)
 }
 
 func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

@@ -1,0 +1,18 @@
+---
+page_title: "thoth_fleet Resource"
+subcategory: "Fleet"
+description: |-
+  Manages tenant fleets and lifecycle metadata.
+---
+
+# resource: thoth_fleet
+
+```terraform
+resource "thoth_fleet" "engineering" {
+  name             = "Engineering Workstations"
+  region           = "US-East-1"
+  rollout_strategy = "staged"
+  status           = "active"
+  provider         = "intune"
+}
+```

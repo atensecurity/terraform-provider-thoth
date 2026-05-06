@@ -1,0 +1,14 @@
+---
+page_title: "thoth_evidence_bundle Data Source"
+subcategory: "Governance"
+description: |-
+  Reads the exported evidence bundle for a specific session.
+---
+
+# data source: thoth_evidence_bundle
+
+```terraform
+data "thoth_evidence_bundle" "session" {
+  session_id = "sess_01J..."
+}
+```

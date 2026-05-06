@@ -1,0 +1,14 @@
+---
+page_title: "thoth_evidence_chain Data Source"
+subcategory: "Governance"
+description: |-
+  Reads WORM evidence chain records for the tenant.
+---
+
+# data source: thoth_evidence_chain
+
+```terraform
+data "thoth_evidence_chain" "recent" {
+  limit = 100
+}
+```

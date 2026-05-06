@@ -1,0 +1,18 @@
+---
+page_title: "thoth_api_key_authorization Data Source"
+subcategory: "Access"
+description: |-
+  Validates API key authorization checks for a target resource.
+---
+
+# data source: thoth_api_key_authorization
+
+```terraform
+data "thoth_api_key_authorization" "execute_check" {
+  key_id        = var.key_id
+  api_key       = var.api_key
+  permission    = "execute"
+  resource_type = "agent"
+  resource_id   = var.agent_id
+}
+```

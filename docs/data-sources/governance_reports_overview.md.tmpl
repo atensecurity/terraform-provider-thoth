@@ -1,0 +1,14 @@
+---
+page_title: "thoth_governance_reports_overview Data Source"
+subcategory: "Governance"
+description: |-
+  Reads governance reporting overview metrics and trends.
+---
+
+# data source: thoth_governance_reports_overview
+
+```terraform
+data "thoth_governance_reports_overview" "month" {
+  days = 30
+}
+```

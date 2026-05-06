@@ -1,0 +1,16 @@
+---
+page_title: "thoth_approvals Data Source"
+subcategory: "Governance"
+description: |-
+  Reads approval queue records.
+---
+
+# data source: thoth_approvals
+
+```terraform
+data "thoth_approvals" "pending" {
+  status   = "pending"
+  page     = 1
+  per_page = 50
+}
+```

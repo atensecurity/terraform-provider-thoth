@@ -16,7 +16,7 @@ terraform {
   required_providers {
     thoth = {
       source  = "atensecurity/thoth"
-      version = "~> 0.1.1"
+      version = "~> 0.1.4"
     }
   }
 }
@@ -27,3 +27,72 @@ provider "thoth" {
   org_api_key = var.org_api_key
 }
 ```
+
+## Authentication
+
+The provider supports two authentication modes:
+
+1. Organization API key (recommended for automation)
+2. Admin bearer token (legacy/operator workflows)
+
+### Recommended: Organization API Key
+
+Use one of:
+
+- `org_api_key`
+- `org_api_key_file`
+- `THOTH_API_KEY` environment variable
+
+`THOTH_API_KEY` must contain an organization-scoped key.
+
+### Alternative: Admin Bearer Token
+
+Use one of:
+
+- `admin_bearer_token`
+- `admin_bearer_token_file`
+
+### Auth Resolution Rules
+
+- `org_api_key*` and `admin_bearer_token*` are mutually exclusive. Configuring both fails provider initialization.
+- If both inline and file inputs are set for the same auth mode, inline value is used.
+- `THOTH_API_KEY` is only used when no explicit auth attributes are set.
+- Provider initialization fails if no usable credentials are supplied.
+
+### Environment Variable Example
+
+```bash
+export THOTH_API_KEY="thoth_org_..."
+```
+
+```terraform
+provider "thoth" {
+  tenant_id = "acme"
+}
+```
+
+### File-Based API Key Example
+
+```terraform
+provider "thoth" {
+  tenant_id        = "acme"
+  org_api_key_file = pathexpand("~/.thoth/org_api_key")
+}
+```
+
+### Admin Token Example
+
+```terraform
+provider "thoth" {
+  tenant_id                = "acme"
+  admin_bearer_token_file  = pathexpand("~/.thoth/admin_bearer_token")
+}
+```
+
+## Endpoint Derivation
+
+When `api_base_url` is not set, the provider derives it as:
+
+`https://grid.<tenant_id>.<apex_domain>`
+
+By default, `apex_domain` is `atensecurity.com`.

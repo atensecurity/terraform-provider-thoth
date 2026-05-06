@@ -39,7 +39,7 @@ terraform {
   required_providers {
     thoth = {
       source  = "atensecurity/thoth"
-      version = "~> 0.1.1"
+      version = "~> 0.1.4"
     }
   }
 }
@@ -72,7 +72,8 @@ See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/
 For legacy interactive workflows, `admin_bearer_token` and
 `admin_bearer_token_file` remain supported.
 
-For CI/CD, you can also export `THOTH_API_KEY` and omit explicit auth fields.
+For CI/CD, you can export `THOTH_API_KEY` (must be an org-scoped key) and
+omit explicit auth fields.
 
 ## Provider Resources
 
@@ -82,7 +83,11 @@ For CI/CD, you can also export `THOTH_API_KEY` and omit explicit auth fields.
 - `thoth_browser_provider`
 - `thoth_browser_policy`
 - `thoth_browser_enrollment`
-- `thoth_api_key`
+- `thoth_api_key` (legacy scope-driven shape; prefer scoped resources below)
+- `thoth_fleet_api_key`
+- `thoth_endpoint_api_key`
+- `thoth_agent_api_key`
+- `thoth_fleet`
 - `thoth_webhook_test`
 - `thoth_evidence_backfill`
 - `thoth_decision_field_backfill`
@@ -93,12 +98,36 @@ For CI/CD, you can also export `THOTH_API_KEY` and omit explicit auth fields.
 
 ## Provider Data Sources
 
+- `thoth_approvals`
+- `thoth_api_key_authorization`
+- `thoth_api_keys`
+- `thoth_billing_pricing`
+- `thoth_billing_monthly_cost`
+- `thoth_billing_invoices`
+- `thoth_billing_reports`
+- `thoth_billing_report`
+- `thoth_evidence_chain`
+- `thoth_evidence_verify`
+- `thoth_evidence_bundle`
+- `thoth_fleets`
+- `thoth_fleet`
 - `thoth_tenant_settings`
+- `thoth_endpoints`
+- `thoth_endpoint_stats`
 - `thoth_governance_feed`
+- `thoth_governance_packs`
+- `thoth_governance_runtime_status`
+- `thoth_governance_day7_report`
+- `thoth_governance_reports_overview`
+- `thoth_governance_cost_report`
 - `thoth_governance_tools`
 - `thoth_governance_evidence_slos`
 - `thoth_api_key_metrics`
+- `thoth_mdm_providers`
 - `thoth_mdm_sync_job`
+- `thoth_browser_providers`
+- `thoth_browser_policies`
+- `thoth_browser_enrollments`
 
 ## Local Development
 
@@ -117,8 +146,8 @@ Provider release automation is defined for the public provider repository in:
 
 Tag formats supported by the workflow:
 
-- `v0.1.1`
-- `v0.1.1-rc1`
+- `v0.1.4`
+- `v0.1.4-rc1`
 
 ## Governance And IP
 

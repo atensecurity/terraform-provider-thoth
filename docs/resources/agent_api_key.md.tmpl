@@ -1,19 +1,13 @@
 ---
-page_title: "thoth_api_key Resource"
+page_title: "thoth_agent_api_key Resource"
 subcategory: "Access"
 description: |-
-  Creates scoped JIT API keys for Thoth runtime/admin operations.
+  Creates scoped JIT API keys bound to a single agent.
 ---
 
-# thoth_api_key
+# thoth_agent_api_key
 
-Issues short-lived scoped API keys.
-
-This is a legacy resource shape and is superseded by:
-
-- `thoth_fleet_api_key`
-- `thoth_endpoint_api_key`
-- `thoth_agent_api_key`
+Issues short-lived agent-scoped API keys.
 
 Organization-scoped keys are intentionally not creatable through Terraform/Pulumi.
 Create organization keys with `thothctl api-keys create ...` and pass them to
@@ -22,9 +16,8 @@ the provider via `THOTH_API_KEY` or `org_api_key`.
 ## Example Usage
 
 ```terraform
-resource "thoth_api_key" "agent_exec" {
+resource "thoth_agent_api_key" "agent_exec" {
   name            = "agent-exec"
-  scope_level     = "agent"
   scope_target_id = "agent-123"
   permissions     = ["execute", "read"]
   ttl_seconds     = 3600

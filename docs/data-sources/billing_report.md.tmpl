@@ -1,0 +1,15 @@
+---
+page_title: "thoth_billing_report Data Source"
+subcategory: "Billing"
+description: |-
+  Reads the full billing report for a selected year/month.
+---
+
+# data source: thoth_billing_report
+
+```terraform
+data "thoth_billing_report" "march_2026" {
+  year  = 2026
+  month = 3
+}
+```

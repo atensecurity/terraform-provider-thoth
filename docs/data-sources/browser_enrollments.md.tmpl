@@ -1,0 +1,15 @@
+---
+page_title: "thoth_browser_enrollments Data Source"
+subcategory: "Browser"
+description: |-
+  Reads browser enrollments with optional provider and status filters.
+---
+
+# data source: thoth_browser_enrollments
+
+```terraform
+data "thoth_browser_enrollments" "active" {
+  provider = "google_chrome"
+  status   = "active"
+}
+```

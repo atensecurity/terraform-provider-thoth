@@ -1,0 +1,26 @@
+---
+page_title: "thoth_fleet_api_key Resource"
+subcategory: "Access"
+description: |-
+  Creates scoped JIT API keys bound to a single fleet.
+---
+
+# thoth_fleet_api_key
+
+Issues short-lived fleet-scoped API keys.
+
+Organization-scoped keys are intentionally not creatable through Terraform/Pulumi.
+Create organization keys with `thothctl api-keys create ...` and pass them to
+the provider via `THOTH_API_KEY` or `org_api_key`.
+
+## Example Usage
+
+```terraform
+resource "thoth_fleet_api_key" "fleet_ops" {
+  name            = "fleet-ops"
+  scope_target_id = "fleet-001"
+  permissions     = ["read", "write"]
+  ttl_seconds     = 3600
+  jit_reason      = "fleet-maintenance-window"
+}
+```
