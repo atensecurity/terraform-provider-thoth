@@ -9,12 +9,6 @@ variable "tenant_id" {
   description = "Tenant slug."
 }
 
-variable "org_api_key" {
-  type        = string
-  description = "Org API key for GovAPI."
-  ephemeral   = true
-}
-
 variable "compliance_profile" {
   type        = string
   description = "Tenant compliance profile."

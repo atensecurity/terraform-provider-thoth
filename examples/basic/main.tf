@@ -12,20 +12,24 @@ terraform {
 provider "thoth" {
   tenant_id   = var.tenant_id
   apex_domain = var.apex_domain
-  org_api_key = var.org_api_key
+  # Auth resolves from THOTH_API_KEY (org-scoped).
 }
 
-resource "thoth_tenant_settings" "tenant" {
+resource "thoth_governance_settings" "tenant_policy" {
   compliance_profile = var.compliance_profile
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
   shadow_critical    = "block"
+}
 
+resource "thoth_webhook_settings" "tenant_webhook" {
   webhook_enabled = true
   webhook_url     = var.webhook_url
   webhook_secret  = var.webhook_secret
+}
 
+resource "thoth_siem_settings" "tenant_siem" {
   siem_provider         = var.siem_provider
   siem_webhook_enabled  = true
   siem_webhook_url      = var.webhook_url

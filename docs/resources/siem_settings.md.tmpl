@@ -1,0 +1,22 @@
+---
+page_title: "thoth_siem_settings Resource"
+subcategory: "Governance"
+description: |-
+  Manages tenant SIEM integration settings.
+---
+
+# thoth_siem_settings
+
+Manages SIEM provider selection and SIEM webhook routing details.
+
+## Example Usage
+
+```terraform
+resource "thoth_siem_settings" "siem" {
+  siem_provider         = "custom"
+  siem_webhook_enabled  = true
+  siem_webhook_url      = var.siem_webhook_url
+  siem_webhook_secret   = var.siem_webhook_secret
+  siem_webhook_provider = "custom"
+}
+```

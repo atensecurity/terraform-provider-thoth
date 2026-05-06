@@ -51,13 +51,15 @@ provider "thoth" {
   request_timeout_seconds = 30
 }
 
-resource "thoth_tenant_settings" "this" {
+resource "thoth_governance_settings" "this" {
   compliance_profile = "soc2"
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
   shadow_critical    = "block"
+}
 
+resource "thoth_webhook_settings" "webhook" {
   webhook_enabled = true
   webhook_url     = var.webhook_url
   webhook_secret  = var.webhook_secret
@@ -75,15 +77,19 @@ For legacy interactive workflows, `admin_bearer_token` and
 For CI/CD, you can export `THOTH_API_KEY` (must be an org-scoped key) and
 omit explicit auth fields.
 
+`tenant_id` can also be omitted when `THOTH_TENANT_ID` is exported.
+
 ## Provider Resources
 
-- `thoth_tenant_settings`
+- `thoth_governance_settings`
+- `thoth_webhook_settings`
+- `thoth_siem_settings`
+- `thoth_pam_settings`
 - `thoth_mdm_provider`
 - `thoth_mdm_sync`
 - `thoth_browser_provider`
 - `thoth_browser_policy`
 - `thoth_browser_enrollment`
-- `thoth_api_key` (legacy scope-driven shape; prefer scoped resources below)
 - `thoth_fleet_api_key`
 - `thoth_endpoint_api_key`
 - `thoth_agent_api_key`

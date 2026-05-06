@@ -9,6 +9,9 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 - `thoth_api_keys` data source for API key inventory queries with scope and active-state filtering.
 - New scope-specific API key resources:
   `thoth_fleet_api_key`, `thoth_endpoint_api_key`, `thoth_agent_api_key`.
+- New focused tenant settings resources:
+  `thoth_governance_settings`, `thoth_webhook_settings`, `thoth_siem_settings`,
+  and `thoth_pam_settings`.
 - Fleet lifecycle coverage:
   `thoth_fleet` resource plus `thoth_fleet`, `thoth_fleets`, `thoth_endpoints`, and
   `thoth_endpoint_stats` data sources.
@@ -19,19 +22,29 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   `thoth_mdm_providers`, `thoth_browser_providers`, `thoth_browser_policies`, and
   `thoth_browser_enrollments` data sources.
 
+### Removed
+
+- Deprecated legacy API key resource `thoth_api_key`.
+  Use `thoth_fleet_api_key`, `thoth_endpoint_api_key`, and `thoth_agent_api_key`.
+- Deprecated legacy umbrella settings resource `thoth_tenant_settings`.
+  Use `thoth_governance_settings`, `thoth_webhook_settings`,
+  `thoth_siem_settings`, and `thoth_pam_settings`.
+
 ### Changed
 
 - Provider examples and docs now target `~> 0.1.4` for next-release guidance.
 - Provider registry docs include expanded authentication guidance with explicit
   org-scoped `THOTH_API_KEY` requirements and auth precedence rules.
-- `thoth_api_key` now rejects `organization` scope creation and recommends
-  out-of-band org key creation via `thothctl`.
-- `thoth_api_key` scope-driven creation is deprecated in favor of dedicated
-  scoped resources.
+- Updated examples, acceptance stubs, and docs to remove usage of removed resources.
+- `thoth_pack_assignment` and `thoth_pack_assignment_bulk` remain separate
+  lifecycle resources (no merge or schema change).
+- MDM and browser provider/policy/enrollment resources remain unified multi-provider
+  resources pending provider-specific typed API contracts.
 
 ### Compatibility
 
-- No breaking schema changes in this release.
+- This release intentionally removes deprecated resources because the provider
+  is not yet in production customer use.
 
 ## 0.1.3 - 2026-05-05
 

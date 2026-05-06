@@ -1,0 +1,21 @@
+---
+page_title: "thoth_webhook_settings Resource"
+subcategory: "Governance"
+description: |-
+  Manages tenant webhook delivery settings.
+---
+
+# thoth_webhook_settings
+
+Manages outbound webhook enablement, destination URL, and signing secret.
+
+## Example Usage
+
+```terraform
+resource "thoth_webhook_settings" "alerts" {
+  webhook_enabled       = true
+  webhook_url           = var.webhook_url
+  webhook_secret        = var.webhook_secret
+  test_webhook_on_apply = true
+}
+```

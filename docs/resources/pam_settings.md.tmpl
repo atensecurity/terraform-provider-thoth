@@ -1,0 +1,24 @@
+---
+page_title: "thoth_pam_settings Resource"
+subcategory: "Governance"
+description: |-
+  Manages tenant PAM step-up integration settings.
+---
+
+# thoth_pam_settings
+
+Manages PAM step-up enablement and outbound request/callback credentials.
+
+## Example Usage
+
+```terraform
+resource "thoth_pam_settings" "pam" {
+  pam_enabled                 = true
+  pam_provider                = "okta"
+  pam_callback_secret         = var.pam_callback_secret
+  pam_request_url             = var.pam_request_url
+  pam_request_secret          = var.pam_request_secret
+  pam_request_auth_token      = var.pam_request_auth_token
+  pam_request_timeout_seconds = 5
+}
+```

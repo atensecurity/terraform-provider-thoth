@@ -1,4 +1,4 @@
-resource "thoth_tenant_settings" "this" {
+resource "thoth_governance_settings" "this" {
   compliance_profile = var.compliance_profile
   shadow_low         = "allow"
   shadow_medium      = "step_up"
@@ -8,5 +8,5 @@ resource "thoth_tenant_settings" "this" {
 
 output "tenant_settings_id" {
   description = "Settings resource ID"
-  value       = thoth_tenant_settings.this.id
+  value       = thoth_governance_settings.this.id
 }

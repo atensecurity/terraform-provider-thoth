@@ -1,0 +1,26 @@
+---
+page_title: "thoth_governance_settings Resource"
+subcategory: "Governance"
+description: |-
+  Manages tenant governance policy settings.
+---
+
+# thoth_governance_settings
+
+Manages compliance profile, risk policy, secret broker controls, and model router policy.
+
+## Example Usage
+
+```terraform
+resource "thoth_governance_settings" "tenant_policy" {
+  compliance_profile = "soc2"
+  shadow_low         = "allow"
+  shadow_medium      = "step_up"
+  shadow_high        = "block"
+  shadow_critical    = "block"
+
+  model_router_enabled          = true
+  model_router_default_provider = "openai"
+  model_router_default_model    = "gpt-4o-mini"
+}
+```

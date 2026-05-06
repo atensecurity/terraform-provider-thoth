@@ -1,6 +1,6 @@
-output "tenant_settings_id" {
-  description = "Tenant settings resource identifier."
-  value       = thoth_tenant_settings.tenant.id
+output "tenant_governance_settings_id" {
+  description = "Tenant governance settings resource identifier."
+  value       = thoth_governance_settings.tenant_policy.id
 }
 
 output "mdm_sync_job_status" {

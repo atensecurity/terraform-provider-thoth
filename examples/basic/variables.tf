@@ -9,12 +9,6 @@ variable "apex_domain" {
   default     = "atensecurity.com"
 }
 
-variable "org_api_key" {
-  description = "Org-level API key used for Thoth control-plane APIs in CI/CD."
-  type        = string
-  sensitive   = true
-}
-
 variable "compliance_profile" {
   description = "Compliance profile for default governance controls."
   type        = string

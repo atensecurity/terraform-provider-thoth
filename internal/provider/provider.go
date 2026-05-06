@@ -70,8 +70,8 @@ func (p *thothProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 				},
 			},
 			"tenant_id": schema.StringAttribute{
-				Required:    true,
-				Description: "Tenant slug used in GovAPI route scoping.",
+				Optional:    true,
+				Description: "Tenant slug used in GovAPI route scoping. If omitted, provider reads THOTH_TENANT_ID.",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -167,10 +167,13 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	tenantID := strings.TrimSpace(config.TenantID.ValueString())
 	if tenantID == "" {
+		tenantID = strings.TrimSpace(os.Getenv("THOTH_TENANT_ID"))
+	}
+	if tenantID == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("tenant_id"),
 			"Missing tenant_id",
-			"tenant_id must not be empty.",
+			"Set tenant_id or export THOTH_TENANT_ID.",
 		)
 		return
 	}
@@ -296,13 +299,15 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		resources.NewTenantSettingsResource,
+		resources.NewGovernanceSettingsResource,
+		resources.NewWebhookSettingsResource,
+		resources.NewSIEMSettingsResource,
+		resources.NewPAMSettingsResource,
 		resources.NewMDMProviderResource,
 		resources.NewMDMSyncResource,
 		resources.NewBrowserProviderResource,
 		resources.NewBrowserPolicyResource,
 		resources.NewBrowserEnrollmentResource,
-		resources.NewAPIKeyResource,
 		resources.NewFleetAPIKeyResource,
 		resources.NewEndpointAPIKeyResource,
 		resources.NewAgentAPIKeyResource,

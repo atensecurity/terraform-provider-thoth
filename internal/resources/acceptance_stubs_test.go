@@ -26,7 +26,7 @@ func TestAccTenantSettings_basic(t *testing.T) {
 		t.Skip("set TF_ACC=1 to run acceptance tests")
 	}
 
-	resourceName := "thoth_tenant_settings.test"
+	resourceName := "thoth_governance_settings.test"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -155,15 +155,12 @@ provider "thoth" {
 
 func testAccTenantSettingsConfig(profile string) string {
 	return testAccProviderConfig() + fmt.Sprintf(`
-resource "thoth_tenant_settings" "test" {
+resource "thoth_governance_settings" "test" {
   compliance_profile = %q
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
   shadow_critical    = "block"
-
-  siem_provider        = "custom"
-  siem_webhook_enabled = false
 }
 `, profile)
 }

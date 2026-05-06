@@ -45,6 +45,13 @@ Use one of:
 
 `THOTH_API_KEY` must contain an organization-scoped key.
 
+### Tenant Resolution
+
+Use one of:
+
+- `tenant_id`
+- `THOTH_TENANT_ID` environment variable
+
 ### Alternative: Admin Bearer Token
 
 Use one of:
@@ -63,19 +70,17 @@ Use one of:
 
 ```bash
 export THOTH_API_KEY="thoth_org_..."
+export THOTH_TENANT_ID="acme"
 ```
 
 ```terraform
-provider "thoth" {
-  tenant_id = "acme"
-}
+provider "thoth" {}
 ```
 
 ### File-Based API Key Example
 
 ```terraform
 provider "thoth" {
-  tenant_id        = "acme"
   org_api_key_file = pathexpand("~/.thoth/org_api_key")
 }
 ```
@@ -84,8 +89,7 @@ provider "thoth" {
 
 ```terraform
 provider "thoth" {
-  tenant_id                = "acme"
-  admin_bearer_token_file  = pathexpand("~/.thoth/admin_bearer_token")
+  admin_bearer_token_file = pathexpand("~/.thoth/admin_bearer_token")
 }
 ```
 
