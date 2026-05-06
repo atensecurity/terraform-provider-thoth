@@ -20,7 +20,7 @@ require_env THOTH_TENANT_ID
 
 THOTH_ORG_API_KEY_EFFECTIVE="${THOTH_ORG_API_KEY:-${THOTH_API_KEY:-}}"
 
-if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} && ( -n ${THOTH_ADMIN_BEARER_TOKEN:-} || -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-} ) ]]; then
+if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} && (-n ${THOTH_ADMIN_BEARER_TOKEN:-} || -n ${THOTH_ADMIN_BEARER_TOKEN_FILE:-}) ]]; then
 	echo "error: set either org API key auth (THOTH_ORG_API_KEY/THOTH_API_KEY) or bearer token auth (THOTH_ADMIN_BEARER_TOKEN/THOTH_ADMIN_BEARER_TOKEN_FILE), not both" >&2
 	exit 1
 fi
