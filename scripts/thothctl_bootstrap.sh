@@ -130,14 +130,14 @@ redacted_args=("${args[@]}")
 if [[ -n ${THOTH_ADMIN_BEARER_TOKEN:-} ]]; then
 	for i in "${!redacted_args[@]}"; do
 		if [[ ${redacted_args[$i]} == "${THOTH_ADMIN_BEARER_TOKEN}" ]]; then
-			redacted_args[$i]="***REDACTED***"
+			redacted_args[i]="***REDACTED***"
 		fi
 	done
 fi
 if [[ -n ${THOTH_ORG_API_KEY_EFFECTIVE} ]]; then
 	for i in "${!redacted_args[@]}"; do
 		if [[ ${redacted_args[$i]} == "${THOTH_ORG_API_KEY_EFFECTIVE}" ]]; then
-			redacted_args[$i]="***REDACTED***"
+			redacted_args[i]="***REDACTED***"
 		fi
 	done
 fi
