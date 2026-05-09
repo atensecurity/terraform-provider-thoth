@@ -1,0 +1,14 @@
+---
+page_title: "thoth_billing_credit_bank Data Source"
+subcategory: "Billing"
+description: |-
+  Reads active credit-bank balances and low-balance alerts.
+---
+
+# data source: thoth_billing_credit_bank
+
+```terraform
+data "thoth_billing_credit_bank" "wallets" {
+  average_monthly_burn_cents = 250000
+}
+```

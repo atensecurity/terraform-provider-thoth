@@ -1,0 +1,17 @@
+---
+page_title: "thoth_billing_estimate Data Source"
+subcategory: "Billing"
+description: |-
+  Builds a dry-run monthly invoice estimate.
+---
+
+# data source: thoth_billing_estimate
+
+```terraform
+data "thoth_billing_estimate" "this_month" {
+  period                      = "2026-05"
+  compliance_uplift_percent   = 10
+  fixed_discount_percent      = 0
+  average_monthly_burn_cents  = 300000
+}
+```

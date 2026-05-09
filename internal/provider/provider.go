@@ -299,6 +299,7 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		resources.NewBillingOverageCapResource,
 		resources.NewGovernanceSettingsResource,
 		resources.NewWebhookSettingsResource,
 		resources.NewSIEMSettingsResource,
@@ -329,6 +330,8 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewAPIKeysDataSource,
 		data_sources.NewBillingPricingDataSource,
 		data_sources.NewBillingMonthlyCostDataSource,
+		data_sources.NewBillingCreditBankDataSource,
+		data_sources.NewBillingEstimateDataSource,
 		data_sources.NewBillingInvoicesDataSource,
 		data_sources.NewBillingReportsDataSource,
 		data_sources.NewBillingReportDataSource,

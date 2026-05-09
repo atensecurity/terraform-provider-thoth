@@ -17,4 +17,15 @@ Reads the tenant monthly billing cost summary.
 
 ### Read-Only
 
+- `action_cost_usd` (Number) Current month action cost estimate in USD.
+- `credit_discount_usd` (Number) Estimated prepaid-credit discount in USD.
+- `governed_identities_observed` (Number) Observed governed identities for the current month.
+- `governed_identity_cost_usd` (Number) Estimated governed-identity meter cost in USD.
+- `net_cost_usd` (Number) Net estimated monthly cost in USD after discount.
+- `policy_checks_cost_usd` (Number) Estimated policy-check meter cost in USD.
+- `policy_checks_total` (Number) Observed policy checks for the current month.
 - `response_json` (String) Monthly billing cost payload as JSON.
+- `stripe_invoice_total_usd` (Number) Stripe invoice total for current period in USD.
+- `stripe_reconciliation_usd` (Number) Difference between Stripe invoice totals and metered estimate.
+- `tier` (String) Effective billing tier for the current month.
+- `total_cost_usd` (Number) Estimated total monthly cost in USD before external reconciliation adjustments.

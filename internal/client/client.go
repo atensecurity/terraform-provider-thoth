@@ -548,6 +548,30 @@ func (c *Client) GetBillingMonthlyCost(ctx context.Context) (map[string]any, err
 	return out, err
 }
 
+func (c *Client) GetBillingCreditBank(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("credit-bank"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetBillingEstimate(ctx context.Context, payload map[string]any, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	err := c.doJSON(ctx, http.MethodPost, c.billingPath("estimate"), query, payload, &out, false)
+	return out, err
+}
+
+func (c *Client) UpdateBillingOverageCap(ctx context.Context, overageCapUSD float64) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{
+		"overage_cap_usd": overageCapUSD,
+	}
+	err := c.doJSON(ctx, http.MethodPut, c.billingPath("overage-cap"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) ListBillingInvoices(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.billingPath("invoices"), query, nil, &out, true)

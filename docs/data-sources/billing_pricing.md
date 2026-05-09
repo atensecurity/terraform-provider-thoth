@@ -17,4 +17,14 @@ Reads the effective tenant billing pricing profile.
 
 ### Read-Only
 
+- `active_tier` (String) Effective active pricing tier used for billing.
+- `base_monthly_platform_fee_usd` (Number) Base monthly platform fee for the active tier.
+- `catalog_version` (String) Pricing catalog version used for this profile.
+- `credit_discount_percent` (Number) Configured discount percent tied to prepaid credits.
+- `governed_identity_usd_per_month` (Number) Per-identity overage rate.
+- `included_governed_identities` (Number) Included governed identities before overage rates apply.
+- `included_policy_checks` (Number) Included policy checks before overage rates apply.
+- `overage_cap_usd` (Number) Customer-configurable monthly variable overage cap.
+- `policy_checks_usd_per_million` (Number) Per-million policy checks overage rate.
+- `prepaid_credit_usd` (Number) Current configured prepaid credit amount.
 - `response_json` (String) Billing pricing payload as JSON.
