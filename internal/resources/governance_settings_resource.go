@@ -73,17 +73,17 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"shadow_critical":                      schema.StringAttribute{Optional: true, Description: "Default action for critical risk events."},
 			"tool_risk_overrides":                  schema.MapAttribute{Optional: true, ElementType: types.StringType, Description: "Tool-specific risk tier overrides."},
 			"secret_broker_enabled":                schema.BoolAttribute{Optional: true, Description: "Enable secret broker policy enforcement."},
-			"secret_broker_provider":               schema.StringAttribute{Optional: true, Description: "Secret broker provider slug."},
+			"secret_broker_provider":               schema.StringAttribute{Optional: true, Computed: true, Description: "Secret broker provider slug."},
 			"secret_broker_strict_endpoint_mode":   schema.BoolAttribute{Optional: true, Description: "Require endpoint registration for secret resolution."},
 			"secret_broker_fail_on_missing_secret": schema.BoolAttribute{Optional: true, Description: "Fail governed calls when referenced secret is unavailable."},
 			"secret_broker_allowed_hosts":          schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Allowed host patterns for secret broker."},
 			"secret_broker_auth_bindings_json":     schema.StringAttribute{Optional: true, Description: "JSON array of auth binding objects (host_pattern, header, secret_ref, prefix)."},
-			"model_router_enabled":                 schema.BoolAttribute{Optional: true, Description: "Enable model routing policy controls."},
-			"model_router_default_provider":        schema.StringAttribute{Optional: true, Description: "Default model provider."},
-			"model_router_default_model":           schema.StringAttribute{Optional: true, Description: "Default model name."},
-			"model_router_allowed_providers":       schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Allowed model providers allowlist."},
-			"model_router_allowed_models":          schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Allowed model names allowlist."},
-			"model_router_failover_providers":      schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Failover provider order."},
+			"model_router_enabled":                 schema.BoolAttribute{Optional: true, Computed: true, Description: "Enable model routing policy controls."},
+			"model_router_default_provider":        schema.StringAttribute{Optional: true, Computed: true, Description: "Default model provider."},
+			"model_router_default_model":           schema.StringAttribute{Optional: true, Computed: true, Description: "Default model name."},
+			"model_router_allowed_providers":       schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Description: "Allowed model providers allowlist."},
+			"model_router_allowed_models":          schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Description: "Allowed model names allowlist."},
+			"model_router_failover_providers":      schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Description: "Failover provider order."},
 			"extra_settings_json":                  schema.StringAttribute{Optional: true, Description: "Additional JSON object merged into the outgoing settings payload for forward compatibility."},
 			"updated_at":                           schema.StringAttribute{Computed: true, Description: "Last update timestamp returned by GovAPI."},
 		},
@@ -229,7 +229,9 @@ func applyGovernanceSettingsPlan(payload *map[string]any, plan governanceSetting
 
 	secretBroker := tfhelpers.GetMap(p, "secret_broker")
 	setBoolIfKnown(secretBroker, "enabled", plan.SecretBrokerEnabled)
-	setStringIfKnown(secretBroker, "provider", plan.SecretBrokerProvider, types.StringNull())
+	if !plan.SecretBrokerProvider.IsNull() && !plan.SecretBrokerProvider.IsUnknown() {
+		secretBroker["provider"] = canonicalSecretBrokerProvider(plan.SecretBrokerProvider.ValueString())
+	}
 	setBoolIfKnown(secretBroker, "strict_endpoint_mode", plan.SecretBrokerStrictEndpoint)
 	setBoolIfKnown(secretBroker, "fail_on_missing_secret", plan.SecretBrokerFailOnMissing)
 	if !plan.SecretBrokerAllowedHosts.IsNull() && !plan.SecretBrokerAllowedHosts.IsUnknown() {
@@ -295,20 +297,37 @@ func flattenGovernanceSettings(apiPayload map[string]any, current governanceSett
 
 	secretBroker := tfhelpers.GetMap(apiPayload, "secret_broker")
 	state.SecretBrokerEnabled = types.BoolValue(tfhelpers.GetBool(secretBroker, "enabled"))
-	state.SecretBrokerProvider = stringValueFromMap(secretBroker, "provider")
+	if provider := canonicalSecretBrokerProvider(tfhelpers.GetString(secretBroker, "provider")); provider == "" {
+		state.SecretBrokerProvider = types.StringNull()
+	} else {
+		state.SecretBrokerProvider = types.StringValue(provider)
+	}
 	state.SecretBrokerStrictEndpoint = types.BoolValue(tfhelpers.GetBool(secretBroker, "strict_endpoint_mode"))
 	state.SecretBrokerFailOnMissing = types.BoolValue(tfhelpers.GetBool(secretBroker, "fail_on_missing_secret"))
 	state.SecretBrokerAllowedHosts = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(secretBroker, "allowed_hosts"))
 	state.SecretBrokerAuthBindingsJSON = types.StringValue(tfhelpers.ToJSONArrayString(secretBroker["auth_bindings"]))
 
-	modelRouter := tfhelpers.GetMap(apiPayload, "model_router")
-	state.ModelRouterEnabled = types.BoolValue(tfhelpers.GetBool(modelRouter, "enabled"))
-	state.ModelRouterDefaultProvider = stringValueFromMap(modelRouter, "default_provider")
-	state.ModelRouterDefaultModel = stringValueFromMap(modelRouter, "default_model")
-	state.ModelRouterAllowedProviders = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "allowed_providers"))
-	state.ModelRouterAllowedModels = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "allowed_models"))
-	state.ModelRouterFailoverProviders = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "failover_providers"))
+	if rawModelRouter, exists := apiPayload["model_router"]; exists && rawModelRouter != nil {
+		modelRouter := tfhelpers.GetMap(apiPayload, "model_router")
+		state.ModelRouterEnabled = types.BoolValue(tfhelpers.GetBool(modelRouter, "enabled"))
+		state.ModelRouterDefaultProvider = stringValueFromMap(modelRouter, "default_provider")
+		state.ModelRouterDefaultModel = stringValueFromMap(modelRouter, "default_model")
+		state.ModelRouterAllowedProviders = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "allowed_providers"))
+		state.ModelRouterAllowedModels = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "allowed_models"))
+		state.ModelRouterFailoverProviders = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "failover_providers"))
+	}
 
 	state.UpdatedAt = stringValueFromMap(apiPayload, "updated_at")
 	return state
+}
+
+func canonicalSecretBrokerProvider(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", "null":
+		return ""
+	case "aws-secrets-manager", "aws_secrets_manager":
+		return "aws_secrets_manager"
+	default:
+		return strings.TrimSpace(raw)
+	}
 }

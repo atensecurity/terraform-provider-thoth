@@ -225,9 +225,8 @@ func flattenMDMProvider(row map[string]any, current mdmProviderModel, tenantID s
 		next.Name = types.StringValue(v)
 	}
 	next.Enabled = types.BoolValue(tfhelpers.GetBool(row, "enabled"))
-	if raw := row["config"]; raw != nil {
-		next.ConfigJSON = types.StringValue(tfhelpers.ToJSONString(raw))
-	}
+	// Preserve operator-provided sensitive payload exactly; GovAPI may redact or reorder.
+	next.ConfigJSON = current.ConfigJSON
 	next.Status = nullableString(row, "status")
 	next.LastSyncAt = nullableString(row, "last_sync_at")
 	next.LastSyncStatus = nullableString(row, "last_sync_status")

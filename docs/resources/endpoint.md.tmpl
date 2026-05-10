@@ -1,0 +1,33 @@
+---
+page_title: "thoth_endpoint Resource"
+subcategory: "Fleet"
+description: |-
+  Registers and manages tenant endpoint inventory records.
+---
+
+# thoth_endpoint
+
+Registers and updates a Thoth endpoint record.
+
+Use this resource when you want Terraform-managed endpoint IDs and agent
+bindings, for example to drive endpoint-scoped and agent-scoped API key tests.
+
+## Example Usage
+
+```terraform
+resource "thoth_fleet" "dev" {
+  name   = "trantor-dev"
+  region = "us-west-2"
+}
+
+resource "thoth_endpoint" "coding_workstation" {
+  endpoint_id      = "trantor-dev-endpoint-01"
+  hostname         = "coding-workstation-01.cawlo.dev"
+  environment      = "dev"
+  status           = "online"
+  enforcement_mode = "shadow"
+  fleet_id         = thoth_fleet.dev.fleet_id
+  provider_name    = "terraform"
+  agent_ids        = ["coding-agent"]
+}
+```

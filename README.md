@@ -99,6 +99,7 @@ omit explicit auth fields.
 - `thoth_endpoint_api_key`
 - `thoth_agent_api_key`
 - `thoth_fleet`
+- `thoth_endpoint`
 - `thoth_webhook_test`
 - `thoth_evidence_backfill`
 - `thoth_decision_field_backfill`

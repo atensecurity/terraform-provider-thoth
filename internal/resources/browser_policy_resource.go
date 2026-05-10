@@ -61,12 +61,12 @@ func (r *browserPolicyResource) Schema(_ context.Context, _ resource.SchemaReque
 			"provider_name":        schema.StringAttribute{Required: true, Description: "Browser provider slug.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 			"enforcement_mode":     schema.StringAttribute{Optional: true, Description: "Policy mode: monitor or enforce."},
 			"active":               schema.BoolAttribute{Optional: true, Description: "Whether the policy is active."},
-			"version":              schema.Int64Attribute{Optional: true, Description: "Optional explicit policy version."},
+			"version":              schema.Int64Attribute{Optional: true, Computed: true, Description: "Optional explicit policy version."},
 			"policy_json":          schema.StringAttribute{Required: true, Description: "Policy JSON object."},
 			"metadata_json":        schema.StringAttribute{Optional: true, Description: "Arbitrary metadata JSON object."},
 			"compiled_policy_json": schema.StringAttribute{Computed: true, Description: "Compiled provider-native policy JSON from GovAPI."},
-			"created_by":           schema.StringAttribute{Optional: true, Description: "Override created_by audit value."},
-			"updated_by":           schema.StringAttribute{Optional: true, Description: "Override updated_by audit value."},
+			"created_by":           schema.StringAttribute{Optional: true, Computed: true, Description: "Override created_by audit value."},
+			"updated_by":           schema.StringAttribute{Optional: true, Computed: true, Description: "Override updated_by audit value."},
 			"created_at":           schema.StringAttribute{Computed: true, Description: "Creation timestamp."},
 			"updated_at":           schema.StringAttribute{Computed: true, Description: "Update timestamp."},
 		},
@@ -256,7 +256,9 @@ func flattenBrowserPolicy(row map[string]any, current browserPolicyModel, tenant
 	next.ProviderName = nullableString(row, "provider")
 	next.EnforcementMode = nullableString(row, "enforcement_mode")
 	next.Active = types.BoolValue(tfhelpers.GetBool(row, "active"))
-	next.Version = types.Int64Value(tfhelpers.GetInt64(row, "version"))
+	if !current.Version.IsNull() && !current.Version.IsUnknown() {
+		next.Version = types.Int64Value(tfhelpers.GetInt64(row, "version"))
+	}
 	if raw := row["policy"]; raw != nil {
 		next.PolicyJSON = types.StringValue(tfhelpers.ToJSONString(raw))
 	}
@@ -266,8 +268,12 @@ func flattenBrowserPolicy(row map[string]any, current browserPolicyModel, tenant
 	if raw := row["compiled_policy"]; raw != nil {
 		next.CompiledPolicyJSON = types.StringValue(tfhelpers.ToJSONString(raw))
 	}
-	next.CreatedBy = nullableString(row, "created_by")
-	next.UpdatedBy = nullableString(row, "updated_by")
+	if !current.CreatedBy.IsNull() && !current.CreatedBy.IsUnknown() {
+		next.CreatedBy = nullableString(row, "created_by")
+	}
+	if !current.UpdatedBy.IsNull() && !current.UpdatedBy.IsUnknown() {
+		next.UpdatedBy = nullableString(row, "updated_by")
+	}
 	next.CreatedAt = nullableString(row, "created_at")
 	next.UpdatedAt = nullableString(row, "updated_at")
 	return next

@@ -313,6 +313,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewEndpointAPIKeyResource,
 		resources.NewAgentAPIKeyResource,
 		resources.NewFleetResource,
+		resources.NewEndpointResource,
 		resources.NewWebhookTestResource,
 		resources.NewEvidenceBackfillResource,
 		resources.NewDecisionFieldBackfillResource,

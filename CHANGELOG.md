@@ -2,6 +2,39 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.7 - 2026-05-10
+
+### Added
+
+- New endpoint inventory management resource:
+  - `thoth_endpoint` for endpoint registration/update workflows
+    (`endpoint_id`, `hostname`, `fleet_id`, `agent_ids`, enforcement metadata).
+
+### Fixed
+
+- Eliminated apply/read drift for `thoth_browser_policy` when GovAPI returns
+  server-managed audit/version fields that were not set in configuration:
+  - `version`
+  - `created_by`
+  - `updated_by`
+- Eliminated sensitive state inconsistency for `thoth_mdm_provider.config_json`
+  by preserving operator-provided state values even when GovAPI redacts or
+  normalizes the config payload.
+- Stabilized governance settings round-trip behavior in Trantor dev bootstrap
+  usage by aligning model-router allowlist ordering with current GovAPI
+  normalization.
+- Fixed bundled Trantor OPA policy examples that previously failed parse/compile
+  validation under current runtime checks.
+
+### Changed
+
+- Trantor module defaults now keep environment-dependent probes disabled unless
+  explicitly enabled (`run_webhook_test`, MDM sync/provider, endpoint/agent key
+  probes, approval decision probe) to reduce false-negative CI failures.
+- GovAPI policy-bundle runtime validation path now treats Cedar enforcer-side
+  validation as best-effort (GovAPI still enforces Cedar syntax/shape checks
+  before write).
+
 ## 0.1.6 - 2026-05-10
 
 ### Added

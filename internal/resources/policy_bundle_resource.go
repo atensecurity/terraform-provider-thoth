@@ -394,7 +394,7 @@ func flattenPolicyBundle(
 	next.Framework = nullableString(row, "framework")
 	// Keep sensitive raw_policy material out of read paths when omitted by API.
 	rawPolicy := tfhelpers.GetString(row, "raw_policy")
-	if strings.TrimSpace(rawPolicy) != "" {
+	if strings.TrimSpace(rawPolicy) != "" && (next.RawPolicy.IsNull() || next.RawPolicy.IsUnknown()) {
 		next.RawPolicy = types.StringValue(rawPolicy)
 	}
 	next.SourceURI = nullableString(row, "source_uri")

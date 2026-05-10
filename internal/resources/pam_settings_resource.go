@@ -52,13 +52,13 @@ func (r *pamSettingsResource) Schema(_ context.Context, _ resource.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"id":                          schema.StringAttribute{Computed: true, Description: "Terraform resource identifier (tenant ID).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"tenant_id":                   schema.StringAttribute{Computed: true, Description: "Tenant ID resolved from provider configuration."},
-			"pam_enabled":                 schema.BoolAttribute{Optional: true, Description: "Enable PAM step-up callback integration."},
-			"pam_provider":                schema.StringAttribute{Optional: true, Description: "PAM provider slug."},
+			"pam_enabled":                 schema.BoolAttribute{Optional: true, Computed: true, Description: "Enable PAM step-up callback integration."},
+			"pam_provider":                schema.StringAttribute{Optional: true, Computed: true, Description: "PAM provider slug."},
 			"pam_callback_secret":         schema.StringAttribute{Optional: true, Sensitive: true, Description: "Shared secret for PAM callback validation."},
-			"pam_request_url":             schema.StringAttribute{Optional: true, Description: "Outbound PAM request URL."},
+			"pam_request_url":             schema.StringAttribute{Optional: true, Computed: true, Description: "Outbound PAM request URL."},
 			"pam_request_secret":          schema.StringAttribute{Optional: true, Sensitive: true, Description: "Outbound PAM request secret."},
 			"pam_request_auth_token":      schema.StringAttribute{Optional: true, Sensitive: true, Description: "Outbound PAM auth token."},
-			"pam_request_timeout_seconds": schema.Float64Attribute{Optional: true, Description: "Outbound PAM request timeout in seconds."},
+			"pam_request_timeout_seconds": schema.Float64Attribute{Optional: true, Computed: true, Description: "Outbound PAM request timeout in seconds."},
 			"updated_at":                  schema.StringAttribute{Computed: true, Description: "Last update timestamp returned by GovAPI."},
 		},
 	}
