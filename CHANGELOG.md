@@ -38,6 +38,10 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 - Updated examples, acceptance stubs, and docs to remove usage of removed resources.
 - `thoth_pack_assignment` and `thoth_pack_assignment_bulk` remain separate
   lifecycle resources (no merge or schema change).
+- `thoth_pack_assignment` and `thoth_pack_assignment_bulk` now expose first-class
+  deterministic control fields (`mismatch_boost`, `delegation_boost`,
+  `trust_floor`, `critical_threshold`) that merge into
+  `overrides.behavioral_controls` / `overrides_by_pack.behavioral_controls`.
 - MDM and browser provider/policy/enrollment resources remain unified multi-provider
   resources pending provider-specific typed API contracts.
 

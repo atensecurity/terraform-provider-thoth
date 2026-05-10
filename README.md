@@ -102,6 +102,19 @@ omit explicit auth fields.
 - `thoth_pack_assignment`
 - `thoth_pack_assignment_bulk`
 
+### Deterministic Controls via Terraform
+
+Both `thoth_pack_assignment` and `thoth_pack_assignment_bulk` support first-class
+deterministic control attributes:
+
+- `mismatch_boost`
+- `delegation_boost`
+- `trust_floor`
+- `critical_threshold`
+
+These are translated into policy pack overrides under
+`behavioral_controls` and applied through GovAPI during pack assignment.
+
 ## Provider Data Sources
 
 - `thoth_approvals`

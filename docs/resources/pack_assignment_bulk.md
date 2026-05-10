@@ -14,9 +14,13 @@ Applies one or more compliance packs to all agents or scoped subsets (agent_ids,
 
 ```hcl
 resource "thoth_pack_assignment_bulk" "privacy_baseline" {
-  pack_ids    = ["soc2-type2", "gdpr-ai-agents"]
-  environment = "prod"
-  fleet_ids   = ["fleet-finance", "fleet-legal"]
+  pack_ids            = ["soc2-type2", "gdpr-ai-agents"]
+  environment         = "prod"
+  fleet_ids           = ["fleet-finance", "fleet-legal"]
+  mismatch_boost      = 25
+  delegation_boost    = 15
+  trust_floor         = 0.20
+  critical_threshold  = 0.85
 }
 ```
 
@@ -32,10 +36,14 @@ resource "thoth_pack_assignment_bulk" "privacy_baseline" {
 - `agent_ids` (List of String) Specific agent IDs to target.
 - `all_agents` (Boolean) Apply to all known agents for the tenant.
 - `approval_policy_id` (String) Approval policy ID for pack application (defaults to 'default').
+- `critical_threshold` (Number) Force at least STEP_UP when normalized risk meets/exceeds this threshold (0-1). Applied to selected pack_ids.
+- `delegation_boost` (Number) Deterministic boost for delegation risk signals (0-100). Applied to selected pack_ids.
 - `endpoint_ids` (List of String) Endpoint IDs whose agents should receive the selected packs.
 - `environment` (String) Environment: dev or prod.
 - `fleet_ids` (List of String) Fleet IDs whose agents should receive the selected packs.
+- `mismatch_boost` (Number) Deterministic boost for purpose/sensitivity mismatch signals (0-100). Applied to selected pack_ids.
 - `overrides_by_pack_json` (String) JSON map keyed by pack_id with per-pack overrides.
+- `trust_floor` (Number) Ignore low-confidence purpose/delegation signals below this floor (0-1). Applied to selected pack_ids.
 - `trigger` (String) Change this value to force a fresh apply run.
 
 ### Read-Only

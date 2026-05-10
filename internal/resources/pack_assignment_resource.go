@@ -28,19 +28,23 @@ type packAssignmentResource struct {
 }
 
 type packAssignmentModel struct {
-	ID               types.String `tfsdk:"id"`
-	TenantID         types.String `tfsdk:"tenant_id"`
-	AgentID          types.String `tfsdk:"agent_id"`
-	PackID           types.String `tfsdk:"pack_id"`
-	ApprovalPolicyID types.String `tfsdk:"approval_policy_id"`
-	Environment      types.String `tfsdk:"environment"`
-	OverridesJSON    types.String `tfsdk:"overrides_json"`
-	Status           types.String `tfsdk:"status"`
-	Regulation       types.String `tfsdk:"regulation"`
-	RuleVersion      types.Int64  `tfsdk:"rule_version"`
-	AppliedBy        types.String `tfsdk:"applied_by"`
-	AppliedAt        types.String `tfsdk:"applied_at"`
-	RevokedAt        types.String `tfsdk:"revoked_at"`
+	ID                types.String  `tfsdk:"id"`
+	TenantID          types.String  `tfsdk:"tenant_id"`
+	AgentID           types.String  `tfsdk:"agent_id"`
+	PackID            types.String  `tfsdk:"pack_id"`
+	ApprovalPolicyID  types.String  `tfsdk:"approval_policy_id"`
+	Environment       types.String  `tfsdk:"environment"`
+	OverridesJSON     types.String  `tfsdk:"overrides_json"`
+	MismatchBoost     types.Float64 `tfsdk:"mismatch_boost"`
+	DelegationBoost   types.Float64 `tfsdk:"delegation_boost"`
+	TrustFloor        types.Float64 `tfsdk:"trust_floor"`
+	CriticalThreshold types.Float64 `tfsdk:"critical_threshold"`
+	Status            types.String  `tfsdk:"status"`
+	Regulation        types.String  `tfsdk:"regulation"`
+	RuleVersion       types.Int64   `tfsdk:"rule_version"`
+	AppliedBy         types.String  `tfsdk:"applied_by"`
+	AppliedAt         types.String  `tfsdk:"applied_at"`
+	RevokedAt         types.String  `tfsdk:"revoked_at"`
 }
 
 func NewPackAssignmentResource() resource.Resource {
@@ -68,12 +72,28 @@ func (r *packAssignmentResource) Schema(_ context.Context, _ resource.SchemaRequ
 				},
 			},
 			"overrides_json": schema.StringAttribute{Optional: true, Description: "Pack override JSON object."},
-			"status":         schema.StringAttribute{Computed: true, Description: "Current assignment status."},
-			"regulation":     schema.StringAttribute{Computed: true, Description: "Regulation family for applied pack."},
-			"rule_version":   schema.Int64Attribute{Computed: true, Description: "Rule version applied by enforcer."},
-			"applied_by":     schema.StringAttribute{Computed: true, Description: "Principal that applied the pack."},
-			"applied_at":     schema.StringAttribute{Computed: true, Description: "Apply timestamp."},
-			"revoked_at":     schema.StringAttribute{Computed: true, Description: "Revoke timestamp when assignment is removed."},
+			"mismatch_boost": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Deterministic boost for purpose/sensitivity mismatch signals (0-100).",
+			},
+			"delegation_boost": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Deterministic boost for delegation risk signals (0-100).",
+			},
+			"trust_floor": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Ignore low-confidence purpose/delegation signals below this floor (0-1).",
+			},
+			"critical_threshold": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Force at least STEP_UP when normalized risk meets/exceeds this threshold (0-1).",
+			},
+			"status":       schema.StringAttribute{Computed: true, Description: "Current assignment status."},
+			"regulation":   schema.StringAttribute{Computed: true, Description: "Regulation family for applied pack."},
+			"rule_version": schema.Int64Attribute{Computed: true, Description: "Rule version applied by enforcer."},
+			"applied_by":   schema.StringAttribute{Computed: true, Description: "Principal that applied the pack."},
+			"applied_at":   schema.StringAttribute{Computed: true, Description: "Apply timestamp."},
+			"revoked_at":   schema.StringAttribute{Computed: true, Description: "Revoke timestamp when assignment is removed."},
 		},
 	}
 }
@@ -176,12 +196,35 @@ func (r *packAssignmentResource) apply(ctx context.Context, plan packAssignmentM
 	if !plan.Environment.IsNull() && !plan.Environment.IsUnknown() {
 		payload["environment"] = plan.Environment.ValueString()
 	}
+	overrides := map[string]any{}
 	if !plan.OverridesJSON.IsNull() && !plan.OverridesJSON.IsUnknown() && strings.TrimSpace(plan.OverridesJSON.ValueString()) != "" {
-		overrides, err := tfhelpers.ParseJSONObject(plan.OverridesJSON.ValueString())
+		parsed, err := tfhelpers.ParseJSONObject(plan.OverridesJSON.ValueString())
 		if err != nil {
 			diags.AddAttributeError(path.Root("overrides_json"), "Invalid JSON", err.Error())
 			return packAssignmentModel{}, false
 		}
+		for k, v := range parsed {
+			overrides[k] = v
+		}
+	}
+
+	behavioralControls := extractBehavioralControlsFromOverrides(overrides)
+	if !setBehavioralControlFloat(diags, plan.MismatchBoost, "mismatch_boost", 0.0, 100.0, "mismatch_boost", behavioralControls) {
+		return packAssignmentModel{}, false
+	}
+	if !setBehavioralControlFloat(diags, plan.DelegationBoost, "delegation_boost", 0.0, 100.0, "delegation_boost", behavioralControls) {
+		return packAssignmentModel{}, false
+	}
+	if !setBehavioralControlFloat(diags, plan.TrustFloor, "trust_floor", 0.0, 1.0, "trust_floor", behavioralControls) {
+		return packAssignmentModel{}, false
+	}
+	if !setBehavioralControlFloat(diags, plan.CriticalThreshold, "critical_threshold", 0.0, 1.0, "critical_threshold", behavioralControls) {
+		return packAssignmentModel{}, false
+	}
+	if len(behavioralControls) > 0 {
+		overrides["behavioral_controls"] = behavioralControls
+	}
+	if len(overrides) > 0 {
 		payload["overrides"] = overrides
 	}
 
@@ -216,4 +259,49 @@ func flattenPackAssignment(row map[string]any, current packAssignmentModel, tena
 	next.AppliedAt = nullableString(row, "applied_at")
 	next.RevokedAt = nullableString(row, "revoked_at")
 	return next
+}
+
+func extractBehavioralControlsFromOverrides(overrides map[string]any) map[string]any {
+	if len(overrides) == 0 {
+		return map[string]any{}
+	}
+	raw, ok := overrides["behavioral_controls"]
+	if !ok || raw == nil {
+		return map[string]any{}
+	}
+	switch typed := raw.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for k, v := range typed {
+			out[k] = v
+		}
+		return out
+	default:
+		return map[string]any{}
+	}
+}
+
+func setBehavioralControlFloat(
+	diags *diag.Diagnostics,
+	value types.Float64,
+	attribute string,
+	min float64,
+	max float64,
+	key string,
+	target map[string]any,
+) bool {
+	if value.IsNull() || value.IsUnknown() {
+		return true
+	}
+	numeric := value.ValueFloat64()
+	if numeric < min || numeric > max {
+		diags.AddAttributeError(
+			path.Root(attribute),
+			"Value out of range",
+			fmt.Sprintf("%s must be between %.2f and %.2f.", attribute, min, max),
+		)
+		return false
+	}
+	target[key] = numeric
+	return true
 }

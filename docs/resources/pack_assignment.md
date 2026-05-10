@@ -23,8 +23,12 @@ Applies a compliance pack to a specific agent and tracks assignment state.
 ### Optional
 
 - `approval_policy_id` (String) Approval policy ID for pack application.
+- `critical_threshold` (Number) Force at least STEP_UP when normalized risk meets/exceeds this threshold (0-1).
+- `delegation_boost` (Number) Deterministic boost for delegation risk signals (0-100).
 - `environment` (String) Environment: dev or prod.
+- `mismatch_boost` (Number) Deterministic boost for purpose/sensitivity mismatch signals (0-100).
 - `overrides_json` (String) Pack override JSON object.
+- `trust_floor` (Number) Ignore low-confidence purpose/delegation signals below this floor (0-1).
 
 ### Read-Only
 

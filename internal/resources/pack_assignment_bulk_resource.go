@@ -29,23 +29,27 @@ type packAssignmentBulkResource struct {
 }
 
 type packAssignmentBulkModel struct {
-	ID                  types.String `tfsdk:"id"`
-	TenantID            types.String `tfsdk:"tenant_id"`
-	Trigger             types.String `tfsdk:"trigger"`
-	PackIDs             types.List   `tfsdk:"pack_ids"`
-	AllAgents           types.Bool   `tfsdk:"all_agents"`
-	AgentIDs            types.List   `tfsdk:"agent_ids"`
-	FleetIDs            types.List   `tfsdk:"fleet_ids"`
-	EndpointIDs         types.List   `tfsdk:"endpoint_ids"`
-	ApprovalPolicyID    types.String `tfsdk:"approval_policy_id"`
-	Environment         types.String `tfsdk:"environment"`
-	OverridesByPackJSON types.String `tfsdk:"overrides_by_pack_json"`
-	AppliedCount        types.Int64  `tfsdk:"applied_count"`
-	FailedCount         types.Int64  `tfsdk:"failed_count"`
-	TotalOps            types.Int64  `tfsdk:"total_ops"`
-	TargetAgentIDsJSON  types.String `tfsdk:"target_agent_ids_json"`
-	ResultsJSON         types.String `tfsdk:"results_json"`
-	LastAppliedAt       types.String `tfsdk:"last_applied_at"`
+	ID                  types.String  `tfsdk:"id"`
+	TenantID            types.String  `tfsdk:"tenant_id"`
+	Trigger             types.String  `tfsdk:"trigger"`
+	PackIDs             types.List    `tfsdk:"pack_ids"`
+	AllAgents           types.Bool    `tfsdk:"all_agents"`
+	AgentIDs            types.List    `tfsdk:"agent_ids"`
+	FleetIDs            types.List    `tfsdk:"fleet_ids"`
+	EndpointIDs         types.List    `tfsdk:"endpoint_ids"`
+	ApprovalPolicyID    types.String  `tfsdk:"approval_policy_id"`
+	Environment         types.String  `tfsdk:"environment"`
+	OverridesByPackJSON types.String  `tfsdk:"overrides_by_pack_json"`
+	MismatchBoost       types.Float64 `tfsdk:"mismatch_boost"`
+	DelegationBoost     types.Float64 `tfsdk:"delegation_boost"`
+	TrustFloor          types.Float64 `tfsdk:"trust_floor"`
+	CriticalThreshold   types.Float64 `tfsdk:"critical_threshold"`
+	AppliedCount        types.Int64   `tfsdk:"applied_count"`
+	FailedCount         types.Int64   `tfsdk:"failed_count"`
+	TotalOps            types.Int64   `tfsdk:"total_ops"`
+	TargetAgentIDsJSON  types.String  `tfsdk:"target_agent_ids_json"`
+	ResultsJSON         types.String  `tfsdk:"results_json"`
+	LastAppliedAt       types.String  `tfsdk:"last_applied_at"`
 }
 
 func NewPackAssignmentBulkResource() resource.Resource {
@@ -66,7 +70,7 @@ func (r *packAssignmentBulkResource) Schema(_ context.Context, _ resource.Schema
 			},
 			"tenant_id": schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
 			"trigger": schema.StringAttribute{
-				Optional: true,
+				Optional:    true,
 				Description: "Change this value to force a fresh apply run.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -110,6 +114,22 @@ func (r *packAssignmentBulkResource) Schema(_ context.Context, _ resource.Schema
 			"overrides_by_pack_json": schema.StringAttribute{
 				Optional:    true,
 				Description: "JSON map keyed by pack_id with per-pack overrides.",
+			},
+			"mismatch_boost": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Deterministic boost for purpose/sensitivity mismatch signals (0-100). Applied to selected pack_ids.",
+			},
+			"delegation_boost": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Deterministic boost for delegation risk signals (0-100). Applied to selected pack_ids.",
+			},
+			"trust_floor": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Ignore low-confidence purpose/delegation signals below this floor (0-1). Applied to selected pack_ids.",
+			},
+			"critical_threshold": schema.Float64Attribute{
+				Optional:    true,
+				Description: "Force at least STEP_UP when normalized risk meets/exceeds this threshold (0-1). Applied to selected pack_ids.",
 			},
 			"applied_count": schema.Int64Attribute{Computed: true, Description: "Successful apply operations."},
 			"failed_count":  schema.Int64Attribute{Computed: true, Description: "Failed apply operations."},
@@ -234,6 +254,7 @@ func (r *packAssignmentBulkResource) apply(ctx context.Context, plan packAssignm
 			payload["environment"] = v
 		}
 	}
+	overrides := map[string]map[string]any{}
 	if !plan.OverridesByPackJSON.IsNull() && !plan.OverridesByPackJSON.IsUnknown() {
 		raw := strings.TrimSpace(plan.OverridesByPackJSON.ValueString())
 		if raw != "" {
@@ -242,7 +263,6 @@ func (r *packAssignmentBulkResource) apply(ctx context.Context, plan packAssignm
 				diags.AddAttributeError(path.Root("overrides_by_pack_json"), "Invalid JSON", err.Error())
 				return packAssignmentBulkModel{}, false
 			}
-			overrides := make(map[string]map[string]any, len(parsed))
 			for packID, value := range parsed {
 				if value == nil {
 					continue
@@ -258,10 +278,38 @@ func (r *packAssignmentBulkResource) apply(ctx context.Context, plan packAssignm
 				}
 				overrides[packID] = typed
 			}
-			if len(overrides) > 0 {
-				payload["overrides_by_pack"] = overrides
-			}
 		}
+	}
+
+	behavioralControls := map[string]any{}
+	if !setBulkBehavioralControlFloat(diags, plan.MismatchBoost, "mismatch_boost", 0.0, 100.0, "mismatch_boost", behavioralControls) {
+		return packAssignmentBulkModel{}, false
+	}
+	if !setBulkBehavioralControlFloat(diags, plan.DelegationBoost, "delegation_boost", 0.0, 100.0, "delegation_boost", behavioralControls) {
+		return packAssignmentBulkModel{}, false
+	}
+	if !setBulkBehavioralControlFloat(diags, plan.TrustFloor, "trust_floor", 0.0, 1.0, "trust_floor", behavioralControls) {
+		return packAssignmentBulkModel{}, false
+	}
+	if !setBulkBehavioralControlFloat(diags, plan.CriticalThreshold, "critical_threshold", 0.0, 1.0, "critical_threshold", behavioralControls) {
+		return packAssignmentBulkModel{}, false
+	}
+	if len(behavioralControls) > 0 {
+		for _, packID := range packIDs {
+			current := overrides[packID]
+			if current == nil {
+				current = map[string]any{}
+			}
+			mergedControls := extractBulkBehavioralControls(current)
+			for key, value := range behavioralControls {
+				mergedControls[key] = value
+			}
+			current["behavioral_controls"] = mergedControls
+			overrides[packID] = current
+		}
+	}
+	if len(overrides) > 0 {
+		payload["overrides_by_pack"] = overrides
 	}
 
 	row, err := r.client.ApplyPacksBulk(ctx, payload)
@@ -311,4 +359,49 @@ func listStrings(value types.List, diags *diag.Diagnostics, attr string) []strin
 		out = append(out, trimmed)
 	}
 	return out
+}
+
+func extractBulkBehavioralControls(overrides map[string]any) map[string]any {
+	if len(overrides) == 0 {
+		return map[string]any{}
+	}
+	raw, ok := overrides["behavioral_controls"]
+	if !ok || raw == nil {
+		return map[string]any{}
+	}
+	switch typed := raw.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(typed))
+		for key, value := range typed {
+			out[key] = value
+		}
+		return out
+	default:
+		return map[string]any{}
+	}
+}
+
+func setBulkBehavioralControlFloat(
+	diags *diag.Diagnostics,
+	value types.Float64,
+	attribute string,
+	min float64,
+	max float64,
+	key string,
+	target map[string]any,
+) bool {
+	if value.IsNull() || value.IsUnknown() {
+		return true
+	}
+	numeric := value.ValueFloat64()
+	if numeric < min || numeric > max {
+		diags.AddAttributeError(
+			path.Root(attribute),
+			"Value out of range",
+			fmt.Sprintf("%s must be between %.2f and %.2f.", attribute, min, max),
+		)
+		return false
+	}
+	target[key] = numeric
+	return true
 }

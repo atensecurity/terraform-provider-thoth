@@ -17,6 +17,10 @@ resource "thoth_pack_assignment" "cis_agent" {
   pack_id             = "cis-l1"
   environment         = "prod"
   approval_policy_id  = "pol-123"
+  mismatch_boost      = 25
+  delegation_boost    = 15
+  trust_floor         = 0.20
+  critical_threshold  = 0.85
   overrides_json      = jsonencode({
     exempt_paths = ["/tmp", "/var/tmp"]
   })
