@@ -23,7 +23,7 @@ Manages tenant fleets and lifecycle metadata.
 
 - `policy_id` (String) Attached policy ID.
 - `policy_name` (String) Attached policy name.
-- `provider` (String) Provider hint (jamf, intune, workspace_one, custom, none).
+- `provider_name` (String) Provider hint (jamf, intune, workspace_one, custom, none).
 - `region` (String) Fleet region.
 - `rollout_pct` (Number) Current rollout percentage.
 - `rollout_strategy` (String) Rollout strategy (canary or staged).

@@ -13,6 +13,6 @@ resource "thoth_fleet" "engineering" {
   region           = "US-East-1"
   rollout_strategy = "staged"
   status           = "active"
-  provider         = "intune"
+  provider_name    = "intune"
 }
 ```

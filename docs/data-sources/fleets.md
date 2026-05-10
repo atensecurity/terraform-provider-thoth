@@ -17,7 +17,7 @@ Reads fleets with optional status, region, and provider filters.
 
 ### Optional
 
-- `provider` (String) Optional provider filter.
+- `provider_name` (String) Optional provider filter.
 - `region` (String) Optional region filter.
 - `status` (String) Optional fleet status filter.
 

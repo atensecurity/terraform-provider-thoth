@@ -6,6 +6,12 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Added
 
+- New AIRS billing report artifact data sources for invoice deliverables and export links:
+  - `thoth_billing_artifacts` for recent monthly artifact listings
+  - `thoth_billing_artifact` for a specific `year` + `month` artifact row
+- Provider client coverage for billing artifact APIs:
+  - `GET /v1/billing/artifacts`
+  - `GET /v1/billing/artifacts/{year}/{month}`
 - Explicit regulatory regime support in governance surfaces:
   - `regulatory_regimes` on `thoth_governance_settings`
   - `regulatory_regimes` and effective regulatory profile fields in tenant settings reads
@@ -16,7 +22,13 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 - Policy bundle workflows are now mode-based (`enforce` / `observe`) and no longer
   expose an environment selector on customer-facing bundle surfaces.
+- Updated provider docs/README data source inventory to include billing artifact
+  data sources.
 - Refreshed public examples/docs/runbooks to target provider release `~> 0.1.6`.
+- Renamed reserved root schema fields to satisfy Terraform provider validation:
+  - `provider` -> `provider_name` on `thoth_fleet`, `thoth_fleets`,
+    `thoth_browser_policies`, and `thoth_browser_enrollments`.
+  - `count` -> `total_count` on `thoth_billing_artifacts`.
 
 ### Breaking Changes
 

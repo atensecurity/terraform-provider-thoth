@@ -334,6 +334,8 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewBillingCreditBankDataSource,
 		data_sources.NewBillingEstimateDataSource,
 		data_sources.NewBillingInvoicesDataSource,
+		data_sources.NewBillingArtifactsDataSource,
+		data_sources.NewBillingArtifactDataSource,
 		data_sources.NewBillingReportsDataSource,
 		data_sources.NewBillingReportDataSource,
 		data_sources.NewEvidenceChainDataSource,

@@ -17,7 +17,7 @@ Reads browser enrollments with optional provider and status filters.
 
 ### Optional
 
-- `provider` (String) Optional browser provider filter.
+- `provider_name` (String) Optional browser provider filter.
 - `status` (String) Optional enrollment status filter.
 
 ### Read-Only

@@ -19,11 +19,11 @@ type fleetsDataSource struct {
 }
 
 type fleetsModel struct {
-	Status   types.String `tfsdk:"status"`
-	Region   types.String `tfsdk:"region"`
-	Provider types.String `tfsdk:"provider"`
-	Total    types.Int64  `tfsdk:"total"`
-	DataJSON types.String `tfsdk:"data_json"`
+	Status       types.String `tfsdk:"status"`
+	Region       types.String `tfsdk:"region"`
+	ProviderName types.String `tfsdk:"provider_name"`
+	Total        types.Int64  `tfsdk:"total"`
+	DataJSON     types.String `tfsdk:"data_json"`
 }
 
 func NewFleetsDataSource() datasource.DataSource {
@@ -46,7 +46,7 @@ func (d *fleetsDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Optional:    true,
 				Description: "Optional region filter.",
 			},
-			"provider": schema.StringAttribute{
+			"provider_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "Optional provider filter.",
 			},
@@ -85,7 +85,7 @@ func (d *fleetsDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	status := strings.TrimSpace(state.Status.ValueString())
 	region := strings.TrimSpace(state.Region.ValueString())
-	provider := strings.TrimSpace(state.Provider.ValueString())
+	provider := strings.TrimSpace(state.ProviderName.ValueString())
 
 	filtered := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
@@ -112,9 +112,9 @@ func (d *fleetsDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		state.Region = types.StringValue(region)
 	}
 	if provider == "" {
-		state.Provider = types.StringNull()
+		state.ProviderName = types.StringNull()
 	} else {
-		state.Provider = types.StringValue(provider)
+		state.ProviderName = types.StringValue(provider)
 	}
 	state.Total = types.Int64Value(int64(len(filtered)))
 	state.DataJSON = types.StringValue(tfhelpers.ToJSONArrayString(filtered))

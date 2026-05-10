@@ -17,7 +17,7 @@ Reads browser policies with optional provider filter.
 
 ### Optional
 
-- `provider` (String) Optional browser provider filter.
+- `provider_name` (String) Optional browser provider filter.
 
 ### Read-Only
 

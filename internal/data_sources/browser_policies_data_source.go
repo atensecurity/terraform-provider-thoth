@@ -19,9 +19,9 @@ type browserPoliciesDataSource struct {
 }
 
 type browserPoliciesModel struct {
-	Provider types.String `tfsdk:"provider"`
-	Total    types.Int64  `tfsdk:"total"`
-	DataJSON types.String `tfsdk:"data_json"`
+	ProviderName types.String `tfsdk:"provider_name"`
+	Total        types.Int64  `tfsdk:"total"`
+	DataJSON     types.String `tfsdk:"data_json"`
 }
 
 func NewBrowserPoliciesDataSource() datasource.DataSource {
@@ -36,7 +36,7 @@ func (d *browserPoliciesDataSource) Schema(_ context.Context, _ datasource.Schem
 	resp.Schema = schema.Schema{
 		Description: "Reads browser policies with optional provider filter.",
 		Attributes: map[string]schema.Attribute{
-			"provider": schema.StringAttribute{
+			"provider_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "Optional browser provider filter.",
 			},
@@ -67,7 +67,7 @@ func (d *browserPoliciesDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	provider := strings.TrimSpace(state.Provider.ValueString())
+	provider := strings.TrimSpace(state.ProviderName.ValueString())
 	rows, err := d.client.ListBrowserPolicies(ctx, provider)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading browser policies", err.Error())
@@ -75,9 +75,9 @@ func (d *browserPoliciesDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	if provider == "" {
-		state.Provider = types.StringNull()
+		state.ProviderName = types.StringNull()
 	} else {
-		state.Provider = types.StringValue(provider)
+		state.ProviderName = types.StringValue(provider)
 	}
 	state.Total = types.Int64Value(int64(len(rows)))
 	state.DataJSON = types.StringValue(tfhelpers.ToJSONArrayString(rows))

@@ -19,10 +19,10 @@ type browserEnrollmentsDataSource struct {
 }
 
 type browserEnrollmentsModel struct {
-	Provider types.String `tfsdk:"provider"`
-	Status   types.String `tfsdk:"status"`
-	Total    types.Int64  `tfsdk:"total"`
-	DataJSON types.String `tfsdk:"data_json"`
+	ProviderName types.String `tfsdk:"provider_name"`
+	Status       types.String `tfsdk:"status"`
+	Total        types.Int64  `tfsdk:"total"`
+	DataJSON     types.String `tfsdk:"data_json"`
 }
 
 func NewBrowserEnrollmentsDataSource() datasource.DataSource {
@@ -37,7 +37,7 @@ func (d *browserEnrollmentsDataSource) Schema(_ context.Context, _ datasource.Sc
 	resp.Schema = schema.Schema{
 		Description: "Reads browser enrollments with optional provider and status filters.",
 		Attributes: map[string]schema.Attribute{
-			"provider": schema.StringAttribute{
+			"provider_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "Optional browser provider filter.",
 			},
@@ -72,7 +72,7 @@ func (d *browserEnrollmentsDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	provider := strings.TrimSpace(state.Provider.ValueString())
+	provider := strings.TrimSpace(state.ProviderName.ValueString())
 	status := strings.TrimSpace(state.Status.ValueString())
 	rows, err := d.client.ListBrowserEnrollments(ctx, provider, status)
 	if err != nil {
@@ -81,9 +81,9 @@ func (d *browserEnrollmentsDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	if provider == "" {
-		state.Provider = types.StringNull()
+		state.ProviderName = types.StringNull()
 	} else {
-		state.Provider = types.StringValue(provider)
+		state.ProviderName = types.StringValue(provider)
 	}
 	if status == "" {
 		state.Status = types.StringNull()

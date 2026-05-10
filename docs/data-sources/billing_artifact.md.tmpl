@@ -1,0 +1,15 @@
+---
+page_title: "thoth_billing_artifact Data Source"
+subcategory: "Billing"
+description: |-
+  Reads one monthly billing artifact row by year and month.
+---
+
+# data source: thoth_billing_artifact
+
+```terraform
+data "thoth_billing_artifact" "march_2026" {
+  year  = 2026
+  month = 3
+}
+```

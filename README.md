@@ -139,6 +139,8 @@ and run in `enforce` mode. You can optionally scope assignments by:
 - `thoth_billing_pricing`
 - `thoth_billing_monthly_cost`
 - `thoth_billing_invoices`
+- `thoth_billing_artifacts`
+- `thoth_billing_artifact`
 - `thoth_billing_reports`
 - `thoth_billing_report`
 - `thoth_evidence_chain`

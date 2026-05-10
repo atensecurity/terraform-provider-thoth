@@ -39,7 +39,7 @@ type fleetResourceModel struct {
 	DriftedEndpoints    types.Int64   `tfsdk:"drifted_endpoint_count"`
 	EndpointCount       types.Int64   `tfsdk:"endpoint_count"`
 	CompliancePct       types.Float64 `tfsdk:"compliance_pct"`
-	Provider            types.String  `tfsdk:"provider"`
+	ProviderName        types.String  `tfsdk:"provider_name"`
 	LastDeployedAt      types.String  `tfsdk:"last_deployed_at"`
 	LastDeployedVersion types.String  `tfsdk:"last_deployed_version"`
 	CreatedAt           types.String  `tfsdk:"created_at"`
@@ -79,7 +79,7 @@ func (r *fleetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			"drifted_endpoint_count": schema.Int64Attribute{Computed: true, Description: "Drifted endpoint count."},
 			"endpoint_count":         schema.Int64Attribute{Computed: true, Description: "Endpoint count in this fleet."},
 			"compliance_pct":         schema.Float64Attribute{Computed: true, Description: "Compliance percentage."},
-			"provider":               schema.StringAttribute{Optional: true, Description: "Provider hint (jamf, intune, workspace_one, custom, none)."},
+			"provider_name":          schema.StringAttribute{Optional: true, Description: "Provider hint (jamf, intune, workspace_one, custom, none)."},
 			"last_deployed_at":       schema.StringAttribute{Computed: true, Description: "Last deployment timestamp."},
 			"last_deployed_version":  schema.StringAttribute{Computed: true, Description: "Last deployed version."},
 			"created_at":             schema.StringAttribute{Computed: true, Description: "Creation timestamp."},
@@ -234,8 +234,8 @@ func (r *fleetResource) fleetPayload(plan fleetResourceModel) map[string]any {
 	if !plan.RolloutPct.IsNull() && !plan.RolloutPct.IsUnknown() {
 		payload["rollout_pct"] = plan.RolloutPct.ValueInt64()
 	}
-	if !plan.Provider.IsNull() && !plan.Provider.IsUnknown() {
-		payload["provider"] = strings.TrimSpace(plan.Provider.ValueString())
+	if !plan.ProviderName.IsNull() && !plan.ProviderName.IsUnknown() {
+		payload["provider"] = strings.TrimSpace(plan.ProviderName.ValueString())
 	}
 	return payload
 }
@@ -258,7 +258,7 @@ func flattenFleet(row map[string]any, current fleetResourceModel, tenantID strin
 	next.DriftedEndpoints = types.Int64Value(tfhelpers.GetInt64(row, "drifted_endpoint_count"))
 	next.EndpointCount = types.Int64Value(tfhelpers.GetInt64(row, "endpoint_count"))
 	next.CompliancePct = types.Float64Value(tfhelpers.GetFloat64(row, "compliance_pct"))
-	next.Provider = nullableString(row, "provider")
+	next.ProviderName = nullableString(row, "provider")
 	next.LastDeployedAt = nullableString(row, "last_deployed_at")
 	next.LastDeployedVersion = nullableString(row, "last_deployed_version")
 	next.CreatedAt = nullableString(row, "created_at")

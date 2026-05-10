@@ -598,6 +598,26 @@ func (c *Client) GetBillingReport(ctx context.Context, year, month int64) (map[s
 	return out, err
 }
 
+func (c *Client) ListBillingArtifacts(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.billingPath("artifacts"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetBillingArtifact(ctx context.Context, year, month int64) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(
+		ctx,
+		http.MethodGet,
+		c.billingPath(fmt.Sprintf("artifacts/%d/%d", year, month)),
+		nil,
+		nil,
+		&out,
+		true,
+	)
+	return out, err
+}
+
 func (c *Client) ListGovernanceFeed(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("governance/feed"), query, nil, &out, true)

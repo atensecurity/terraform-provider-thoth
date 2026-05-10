@@ -1,0 +1,14 @@
+---
+page_title: "thoth_billing_artifacts Data Source"
+subcategory: "Billing"
+description: |-
+  Reads monthly billing artifact rows (PDF/CSV links) for recent periods.
+---
+
+# data source: thoth_billing_artifacts
+
+```terraform
+data "thoth_billing_artifacts" "recent" {
+  limit = 12
+}
+```
