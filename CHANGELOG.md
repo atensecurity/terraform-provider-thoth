@@ -34,6 +34,8 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 - GovAPI policy-bundle runtime validation path now treats Cedar enforcer-side
   validation as best-effort (GovAPI still enforces Cedar syntax/shape checks
   before write).
+- Refreshed provider README, generated docs, and examples to target
+  provider release `>= 0.1.7` (`~> 0.1.7` for stack components).
 
 ## 0.1.6 - 2026-05-10
 
