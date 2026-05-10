@@ -21,6 +21,7 @@ type tenantSettingsDataSource struct {
 type tenantSettingsDataSourceModel struct {
 	TenantID          types.String `tfsdk:"tenant_id"`
 	ComplianceProfile types.String `tfsdk:"compliance_profile"`
+	RegulatoryRegimes types.List   `tfsdk:"regulatory_regimes"`
 	UpdatedAt         types.String `tfsdk:"updated_at"`
 	SettingsJSON      types.String `tfsdk:"settings_json"`
 	ToolRiskOverrides types.Map    `tfsdk:"tool_risk_overrides"`
@@ -42,6 +43,7 @@ func (d *tenantSettingsDataSource) Schema(_ context.Context, _ datasource.Schema
 		Attributes: map[string]schema.Attribute{
 			"tenant_id":           schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
 			"compliance_profile":  schema.StringAttribute{Computed: true, Description: "Current compliance profile."},
+			"regulatory_regimes":  schema.ListAttribute{Computed: true, ElementType: types.StringType, Description: "Configured regulatory regimes used for baseline pack auto-loading."},
 			"updated_at":          schema.StringAttribute{Computed: true, Description: "Last settings update timestamp."},
 			"settings_json":       schema.StringAttribute{Computed: true, Description: "Full settings payload as JSON."},
 			"tool_risk_overrides": schema.MapAttribute{Computed: true, ElementType: types.StringType, Description: "Tool risk tier overrides."},
@@ -73,6 +75,7 @@ func (d *tenantSettingsDataSource) Read(ctx context.Context, _ datasource.ReadRe
 	state := tenantSettingsDataSourceModel{
 		TenantID:          types.StringValue(d.tenantID),
 		ComplianceProfile: nullableString(payload, "compliance_profile"),
+		RegulatoryRegimes: tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(payload, "regulatory_regimes")),
 		UpdatedAt:         nullableString(payload, "updated_at"),
 		SettingsJSON:      types.StringValue(tfhelpers.ToJSONString(payload)),
 		ToolRiskOverrides: toolRisk,

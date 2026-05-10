@@ -9,11 +9,15 @@ description: |-
 
 Manages compliance profile, risk policy, secret broker controls, and model router policy.
 
+Use `compliance_profile` for a preset baseline and `regulatory_regimes` for explicit obligations.
+When `regulatory_regimes` is omitted, GovAPI falls back to profile defaults and then `soc2`.
+
 ## Example Usage
 
 ```terraform
 resource "thoth_governance_settings" "tenant_policy" {
   compliance_profile = "soc2"
+  regulatory_regimes = ["soc2", "sec_cftc"]
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"

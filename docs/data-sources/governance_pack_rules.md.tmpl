@@ -1,0 +1,29 @@
+---
+page_title: "thoth_governance_pack_rules Data Source"
+subcategory: "Governance"
+description: |-
+  Reads the active rule version payload for one compliance pack.
+---
+
+# data source: thoth_governance_pack_rules
+
+```terraform
+data "thoth_governance_pack_rules" "hipaa" {
+  pack_id = "hipaa-minimum-necessary"
+}
+```
+
+## Schema
+
+### Required
+
+- `pack_id` (String) Pack identifier.
+
+### Read-Only
+
+- `base_pack_version` (String) Base pack version associated with the active custom rule set.
+- `current_version_json` (String) Active rule version payload as JSON.
+- `display_name` (String) Human-readable pack name.
+- `regulation` (String) Regulation group for this pack.
+- `response_json` (String) Full API response payload as JSON.
+- `total_versions` (Number) Total rule versions retained for this pack.

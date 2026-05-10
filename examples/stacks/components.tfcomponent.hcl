@@ -3,6 +3,7 @@ component "tenant_governance" {
 
   inputs = {
     compliance_profile = var.compliance_profile
+    regulatory_regimes = var.regulatory_regimes
   }
 
   providers = {

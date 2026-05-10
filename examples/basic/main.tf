@@ -4,7 +4,7 @@ terraform {
   required_providers {
     thoth = {
       source  = "atensecurity/thoth"
-      version = "~> 0.1.4"
+      version = "~> 0.1.6"
     }
   }
 }
@@ -17,6 +17,7 @@ provider "thoth" {
 
 resource "thoth_governance_settings" "tenant_policy" {
   compliance_profile = var.compliance_profile
+  regulatory_regimes = var.regulatory_regimes
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
@@ -55,6 +56,23 @@ resource "thoth_mdm_sync" "jamf_sync" {
   timeout_seconds     = 180
 }
 
+resource "thoth_policy_bundle" "standard_dlp_opa" {
+  name             = "standard-dlp"
+  description      = "Customer-agnostic purpose/sensitivity DLP baseline"
+  framework        = "OPA"
+  raw_policy       = file("${path.module}/policies/opa-standard-dlp.rego")
+  enforcement_mode = "enforce"
+}
+
+resource "thoth_policy_bundle" "least_privilege_cedar" {
+  name             = "least-privilege-analyst"
+  description      = "Least-privilege analyst baseline for selected agents"
+  framework        = "CEDAR"
+  raw_policy       = file("${path.module}/policies/cedar-least-privilege-analyst.cedar")
+  assignments      = ["agent:security-analyst-agent", "agent:coding-agent"]
+  enforcement_mode = "enforce"
+}
+
 data "thoth_api_key_metrics" "metrics" {}
 
 data "thoth_governance_tools" "tools" {
@@ -67,8 +85,13 @@ resource "thoth_webhook_test" "delivery" {
 }
 
 resource "thoth_policy_sync" "tenant_policies" {
-  trigger               = "post-bootstrap"
+  trigger               = "post-bootstrap-with-sidecars"
   wait_for_completion   = true
   poll_interval_seconds = 5
   timeout_seconds       = 180
+
+  depends_on = [
+    thoth_policy_bundle.standard_dlp_opa,
+    thoth_policy_bundle.least_privilege_cedar,
+  ]
 }

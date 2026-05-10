@@ -1,0 +1,26 @@
+---
+page_title: "thoth_governance_pack_rule_versions Data Source"
+subcategory: "Governance"
+description: |-
+  Reads all stored rule versions for one compliance pack.
+---
+
+# data source: thoth_governance_pack_rule_versions
+
+```terraform
+data "thoth_governance_pack_rule_versions" "hipaa_history" {
+  pack_id = "hipaa-minimum-necessary"
+}
+```
+
+## Schema
+
+### Required
+
+- `pack_id` (String) Pack identifier.
+
+### Read-Only
+
+- `response_json` (String) Full API response payload as JSON.
+- `total` (Number) Total rule versions returned.
+- `versions_json` (String) Rule versions array as JSON.

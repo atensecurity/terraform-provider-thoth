@@ -56,6 +56,13 @@ fi
 if [[ -n ${THOTH_COMPLIANCE_PROFILE:-} ]]; then
 	args+=(--compliance-profile "${THOTH_COMPLIANCE_PROFILE}")
 fi
+if [[ -n ${THOTH_REGULATORY_REGIMES_CSV:-} ]]; then
+	IFS=',' read -r -a regulatory_regimes <<<"${THOTH_REGULATORY_REGIMES_CSV}"
+	for regime in "${regulatory_regimes[@]}"; do
+		trimmed="$(echo "${regime}" | xargs)"
+		[[ -n ${trimmed} ]] && args+=(--regulatory-regime "${trimmed}")
+	done
+fi
 
 if [[ -n ${THOTH_SHADOW_LOW:-} ]]; then
 	args+=(--shadow-low "${THOTH_SHADOW_LOW}")

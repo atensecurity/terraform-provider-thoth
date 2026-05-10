@@ -39,7 +39,7 @@ terraform {
   required_providers {
     thoth = {
       source  = "atensecurity/thoth"
-      version = "~> 0.1.4"
+      version = "~> 0.1.6"
     }
   }
 }
@@ -53,6 +53,7 @@ provider "thoth" {
 
 resource "thoth_governance_settings" "this" {
   compliance_profile = "soc2"
+  regulatory_regimes = ["soc2"]
   shadow_low         = "allow"
   shadow_medium      = "step_up"
   shadow_high        = "block"
@@ -65,6 +66,10 @@ resource "thoth_webhook_settings" "webhook" {
   webhook_secret  = var.webhook_secret
 }
 ```
+
+`compliance_profile` is a high-level preset for baseline defaults.
+`regulatory_regimes` is the explicit obligations list used for automatic regulatory pack loading.
+If `regulatory_regimes` is omitted, GovAPI falls back to profile-derived defaults and then `["soc2"]`.
 
 When `api_base_url` is omitted, the provider derives it as:
 `https://grid.<tenant_id>.<apex_domain>`.
@@ -98,6 +103,7 @@ omit explicit auth fields.
 - `thoth_evidence_backfill`
 - `thoth_decision_field_backfill`
 - `thoth_policy_sync`
+- `thoth_policy_bundle`
 - `thoth_approval_decision`
 - `thoth_pack_assignment`
 - `thoth_pack_assignment_bulk`
@@ -114,6 +120,16 @@ deterministic control attributes:
 
 These are translated into policy pack overrides under
 `behavioral_controls` and applied through GovAPI during pack assignment.
+
+For framework-native sidecar policies, use `thoth_policy_bundle` to manage
+versioned OPA/Cedar bundles from inline policy or URI-backed policy objects,
+with optional version pinning and hash verification (`source_uri`,
+`s3_version_id`, `expected_hash`). By default, bundles target all assignments
+and run in `enforce` mode. You can optionally scope assignments by:
+
+- `all` (default)
+- `agent:<agent-id>`
+- `<agent-id>` (direct match)
 
 ## Provider Data Sources
 
@@ -135,10 +151,15 @@ These are translated into policy pack overrides under
 - `thoth_endpoint_stats`
 - `thoth_governance_feed`
 - `thoth_governance_packs`
+- `thoth_governance_pack_rules`
+- `thoth_governance_pack_rule_versions`
 - `thoth_governance_runtime_status`
 - `thoth_governance_day7_report`
 - `thoth_governance_reports_overview`
 - `thoth_governance_cost_report`
+- `thoth_report_data`
+- `thoth_policy_bundles`
+- `thoth_effective_policy_bundles`
 - `thoth_governance_tools`
 - `thoth_governance_evidence_slos`
 - `thoth_api_key_metrics`

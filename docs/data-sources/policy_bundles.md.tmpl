@@ -1,0 +1,28 @@
+---
+page_title: "thoth_policy_bundles Data Source"
+subcategory: "Governance"
+description: |-
+  Reads versioned OPA/Cedar policy bundles for the tenant.
+---
+
+# data source: thoth_policy_bundles
+
+```terraform
+data "thoth_policy_bundles" "all_active" {
+  enforcement_mode = "enforce"
+}
+```
+
+## Schema
+
+### Optional
+
+- `assignment` (String) Assignment filter (for example: all, agent:security-analyst-agent, coding-agent).
+- `enforcement_mode` (String) Mode filter (enforce or observe).
+- `framework` (String) Framework filter (OPA or CEDAR).
+- `status` (String) Status filter (active, staged, paused, disabled).
+
+### Read-Only
+
+- `data_json` (String) Bundle rows as JSON array.
+- `total` (Number) Total bundles returned.

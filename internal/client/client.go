@@ -646,6 +646,30 @@ func (c *Client) GetPolicySyncStatus(ctx context.Context) (map[string]any, error
 	return out, err
 }
 
+func (c *Client) ListPolicyBundles(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("policy-bundles"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetPolicyBundle(ctx context.Context, bundleID string) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-bundles/%s", strings.TrimSpace(bundleID)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) CreatePolicyBundle(ctx context.Context, payload map[string]any, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("policy-bundles"), query, payload, &out, false)
+	return out, err
+}
+
+func (c *Client) DeletePolicyBundle(ctx context.Context, bundleID string) error {
+	path := c.tenantPath(fmt.Sprintf("policy-bundles/%s", strings.TrimSpace(bundleID)))
+	return c.doJSON(ctx, http.MethodDelete, path, nil, nil, nil, false)
+}
+
 func (c *Client) ListApprovalsWithQuery(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("approvals"), query, nil, &out, true)
@@ -750,9 +774,29 @@ func (c *Client) ListGovernancePacks(ctx context.Context) (map[string]any, error
 	return out, err
 }
 
+func (c *Client) GetGovernancePackRules(ctx context.Context, packID string) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("packs/%s/rules", strings.TrimSpace(packID)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ListGovernancePackRuleVersions(ctx context.Context, packID string) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("packs/%s/rules/history", strings.TrimSpace(packID)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) GetPackRuntimeStatus(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("packs/runtime-status"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ListEffectivePolicyBundles(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("policy-bundles/effective"), query, nil, &out, true)
 	return out, err
 }
 
@@ -771,6 +815,19 @@ func (c *Client) GetReportsOverview(ctx context.Context, query map[string]string
 func (c *Client) GetCostReport(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports/cost"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ListAIRSReports(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetAIRSReport(ctx context.Context, reportID string, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("reports/%s", strings.TrimSpace(reportID)))
+	err := c.doJSON(ctx, http.MethodGet, path, query, nil, &out, true)
 	return out, err
 }
 

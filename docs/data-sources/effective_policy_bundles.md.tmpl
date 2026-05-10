@@ -1,0 +1,26 @@
+---
+page_title: "thoth_effective_policy_bundles Data Source"
+subcategory: "Governance"
+description: |-
+  Reads effective active policy bundles for one agent scope.
+---
+
+# data source: thoth_effective_policy_bundles
+
+```terraform
+data "thoth_effective_policy_bundles" "coding_agent" {
+  agent_id    = "coding-agent"
+}
+```
+
+## Schema
+
+### Optional
+
+- `agent_id` (String) Optional agent identity filter.
+- `framework` (String) Optional framework filter (OPA or CEDAR).
+
+### Read-Only
+
+- `data_json` (String) Effective bundle rows as JSON array.
+- `total` (Number) Total effective bundles returned.

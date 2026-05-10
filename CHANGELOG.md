@@ -2,6 +2,29 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.6 - 2026-05-10
+
+### Added
+
+- Explicit regulatory regime support in governance surfaces:
+  - `regulatory_regimes` on `thoth_governance_settings`
+  - `regulatory_regimes` and effective regulatory profile fields in tenant settings reads
+- Updated onboarding guidance to use explicit regulatory regime declaration
+  (with GovAPI fallback behavior documented).
+
+### Changed
+
+- Policy bundle workflows are now mode-based (`enforce` / `observe`) and no longer
+  expose an environment selector on customer-facing bundle surfaces.
+- Refreshed public examples/docs/runbooks to target provider release `~> 0.1.6`.
+
+### Breaking Changes
+
+- Removed `environment` from:
+  - `thoth_policy_bundle` resource
+  - `thoth_policy_bundles` data source
+  - `thoth_effective_policy_bundles` data source
+
 ## 0.1.5 - 2026-05-10
 
 ### Added

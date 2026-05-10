@@ -15,6 +15,12 @@ variable "compliance_profile" {
   default     = "soc2"
 }
 
+variable "regulatory_regimes" {
+  description = "Explicit regulatory regimes used for baseline pack auto-loading."
+  type        = list(string)
+  default     = ["soc2"]
+}
+
 variable "siem_provider" {
   description = "SIEM provider slug."
   type        = string

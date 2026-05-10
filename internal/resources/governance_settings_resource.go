@@ -29,6 +29,7 @@ type governanceSettingsModel struct {
 	ID                           types.String `tfsdk:"id"`
 	TenantID                     types.String `tfsdk:"tenant_id"`
 	ComplianceProfile            types.String `tfsdk:"compliance_profile"`
+	RegulatoryRegimes            types.List   `tfsdk:"regulatory_regimes"`
 	ShadowLow                    types.String `tfsdk:"shadow_low"`
 	ShadowMedium                 types.String `tfsdk:"shadow_medium"`
 	ShadowHigh                   types.String `tfsdk:"shadow_high"`
@@ -65,6 +66,7 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"id":                                   schema.StringAttribute{Computed: true, Description: "Terraform resource identifier (tenant ID).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"tenant_id":                            schema.StringAttribute{Computed: true, Description: "Tenant ID resolved from provider configuration."},
 			"compliance_profile":                   schema.StringAttribute{Optional: true, Description: "Compliance profile (soc2, healthcare, financial, public_sector, privacy, ai_governance)."},
+			"regulatory_regimes":                   schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Explicit regulatory regimes for onboarding baseline auto-pack loading (for example: soc2, hipaa, gdpr, fedramp, sec_cftc). Defaults to SOC2 when unset."},
 			"shadow_low":                           schema.StringAttribute{Optional: true, Description: "Default action for low risk events."},
 			"shadow_medium":                        schema.StringAttribute{Optional: true, Description: "Default action for medium risk events."},
 			"shadow_high":                          schema.StringAttribute{Optional: true, Description: "Default action for high risk events."},
@@ -200,6 +202,10 @@ func applyGovernanceSettingsPlan(payload *map[string]any, plan governanceSetting
 	if !plan.ComplianceProfile.IsNull() && !plan.ComplianceProfile.IsUnknown() {
 		p["compliance_profile"] = plan.ComplianceProfile.ValueString()
 	}
+	setListIfKnown(p, "regulatory_regimes", plan.RegulatoryRegimes, diags)
+	if diags.HasError() {
+		return
+	}
 
 	shadow := tfhelpers.GetMap(p, "shadow_policy")
 	setStringIfKnown(shadow, "low", plan.ShadowLow, types.StringNull())
@@ -278,6 +284,7 @@ func flattenGovernanceSettings(apiPayload map[string]any, current governanceSett
 	state.ID = types.StringValue(tenantID)
 	state.TenantID = types.StringValue(tenantID)
 	state.ComplianceProfile = stringValueFromMap(apiPayload, "compliance_profile")
+	state.RegulatoryRegimes = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(apiPayload, "regulatory_regimes"))
 
 	shadow := tfhelpers.GetMap(apiPayload, "shadow_policy")
 	state.ShadowLow = stringValueFromMap(shadow, "low")
