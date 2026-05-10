@@ -2,6 +2,34 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.6 - 2026-05-10
+
+### Added
+
+- Billing management surface for customer-visible overage and invoice previews:
+  - `thoth_billing_overage_cap` resource
+  - `thoth_billing_estimate` data source
+  - `thoth_billing_credit_bank` data source
+- Extended billing data source outputs for reconciliation/reporting, including
+  compliance receipts, low-balance alerts, FIFO credit burn details, and
+  detailed line-item totals.
+- Deterministic behavioral control fields on pack assignment resources:
+  `mismatch_boost`, `delegation_boost`, `trust_floor`, and
+  `critical_threshold`.
+
+### Changed
+
+- Updated provider client and docs to reflect Aten-managed pricing with
+  customer-controlled overage caps and estimate workflows.
+- Updated bootstrap helper scripts and provider docs for newer billing and
+  deterministic-control flows.
+- Updated `golang.org/x/net` dependency to `v0.53.0`.
+
+### Compatibility
+
+- No breaking schema removals in this release.
+- Existing auth methods (`THOTH_API_KEY` and bearer token) remain supported.
+
 ## 0.1.4 - 2026-05-06
 
 ### Added
