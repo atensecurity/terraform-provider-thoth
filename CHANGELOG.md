@@ -2,6 +2,22 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.8 - Unreleased
+
+### Fixed
+
+- Resolved `thoth_browser_policy` post-apply state errors where optional+computed
+  fields could remain unknown when GovAPI omitted them from response payloads:
+  - `version`
+  - `created_by`
+  - `updated_by`
+- Added regression tests for browser policy flattening to ensure optional+computed
+  fields always converge to known state values after apply.
+- Updated the Trantor dev validation module's bundled OPA policies to remain
+  compatible with current GovAPI parser/runtime expectations.
+- Updated Trantor module provider constraint to `>= 0.1.7` so endpoint resources
+  are available during module validation.
+
 ## 0.1.7 - 2026-05-10
 
 ### Added

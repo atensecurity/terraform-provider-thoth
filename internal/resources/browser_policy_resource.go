@@ -256,8 +256,12 @@ func flattenBrowserPolicy(row map[string]any, current browserPolicyModel, tenant
 	next.ProviderName = nullableString(row, "provider")
 	next.EnforcementMode = nullableString(row, "enforcement_mode")
 	next.Active = types.BoolValue(tfhelpers.GetBool(row, "active"))
-	if !current.Version.IsNull() && !current.Version.IsUnknown() {
+	if _, ok := row["version"]; ok {
 		next.Version = types.Int64Value(tfhelpers.GetInt64(row, "version"))
+	} else if !current.Version.IsNull() && !current.Version.IsUnknown() {
+		next.Version = current.Version
+	} else {
+		next.Version = types.Int64Null()
 	}
 	if raw := row["policy"]; raw != nil {
 		next.PolicyJSON = types.StringValue(tfhelpers.ToJSONString(raw))
@@ -268,11 +272,19 @@ func flattenBrowserPolicy(row map[string]any, current browserPolicyModel, tenant
 	if raw := row["compiled_policy"]; raw != nil {
 		next.CompiledPolicyJSON = types.StringValue(tfhelpers.ToJSONString(raw))
 	}
-	if !current.CreatedBy.IsNull() && !current.CreatedBy.IsUnknown() {
+	if _, ok := row["created_by"]; ok {
 		next.CreatedBy = nullableString(row, "created_by")
+	} else if !current.CreatedBy.IsNull() && !current.CreatedBy.IsUnknown() {
+		next.CreatedBy = current.CreatedBy
+	} else {
+		next.CreatedBy = types.StringNull()
 	}
-	if !current.UpdatedBy.IsNull() && !current.UpdatedBy.IsUnknown() {
+	if _, ok := row["updated_by"]; ok {
 		next.UpdatedBy = nullableString(row, "updated_by")
+	} else if !current.UpdatedBy.IsNull() && !current.UpdatedBy.IsUnknown() {
+		next.UpdatedBy = current.UpdatedBy
+	} else {
+		next.UpdatedBy = types.StringNull()
 	}
 	next.CreatedAt = nullableString(row, "created_at")
 	next.UpdatedAt = nullableString(row, "updated_at")
