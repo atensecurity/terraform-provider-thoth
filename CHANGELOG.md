@@ -6,6 +6,9 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Fixed
 
+- Fixed `thoth_policy_bundle` apply inconsistency where updates intentionally
+  create a new bundle version/ID but Terraform state planning pinned `id` to
+  the prior value, causing `Provider produced inconsistent result after apply`.
 - Resolved `thoth_browser_policy` post-apply state errors where optional+computed
   fields could remain unknown when GovAPI omitted them from response payloads:
   - `version`
