@@ -1,7 +1,7 @@
 required_providers {
   thoth = {
     source  = "atensecurity/thoth"
-    version = "~> 0.1.7"
+    version = "~> 0.1.8"
   }
 }
 
