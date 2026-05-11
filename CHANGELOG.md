@@ -2,6 +2,16 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.10 - 2026-05-11
+
+### Fixed
+
+- Improved `thoth_evidence_backfill` endpoint compatibility for mixed GovAPI
+  deployments by retrying the request against an alternate tenant-scoped path
+  when the primary endpoint returns `404` or `405`.
+- Added client regression tests covering evidence backfill primary-path success
+  and fallback behavior on `405 Method Not Allowed`.
+
 ## 0.1.9 - 2026-05-11
 
 ### Fixed

@@ -386,7 +386,32 @@ func (c *Client) BackfillGovernanceEvidence(
 		&out,
 		false,
 	)
+	if err == nil {
+		return out, nil
+	}
+	if !isEvidenceBackfillCompatibilityError(err) {
+		return out, err
+	}
+
+	out = map[string]any{}
+	err = c.doJSON(
+		ctx,
+		http.MethodPost,
+		c.tenantPath("governance/evidence/thoth/backfill"),
+		query,
+		payload,
+		&out,
+		false,
+	)
 	return out, err
+}
+
+func isEvidenceBackfillCompatibilityError(err error) bool {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	return apiErr.StatusCode == http.StatusNotFound || apiErr.StatusCode == http.StatusMethodNotAllowed
 }
 
 func (c *Client) ListMDMProviders(ctx context.Context) ([]map[string]any, error) {
