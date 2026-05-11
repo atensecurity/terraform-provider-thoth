@@ -2,7 +2,7 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
-## 0.1.8 - Unreleased
+## 0.1.9 - 2026-05-11
 
 ### Fixed
 
@@ -18,7 +18,7 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   fields always converge to known state values after apply.
 - Updated the Trantor dev validation module's bundled OPA policies to remain
   compatible with current GovAPI parser/runtime expectations.
-- Updated Trantor module provider constraint to `>= 0.1.8` so endpoint resources
+- Updated Trantor module provider constraint to `>= 0.1.9` so endpoint resources
   are available during module validation.
 
 ## 0.1.7 - 2026-05-10
