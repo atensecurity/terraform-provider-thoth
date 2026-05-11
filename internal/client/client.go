@@ -29,6 +29,10 @@ type Config struct {
 	TenantID              string
 	AuthToken             string
 	APIKey                string
+	UserAgent             string
+	ProvisionedVia        string
+	Provisioner           string
+	ProvisionerVersion    string
 	RetryMaxAttempts      int
 	RetryBaseDelay        time.Duration
 	RetryMaxDelay         time.Duration
@@ -63,6 +67,10 @@ type Client struct {
 	tenantID         string
 	authToken        string
 	apiKey           string
+	userAgent        string
+	provisionedVia   string
+	provisioner      string
+	provisionerVer   string
 	httpClient       *http.Client
 	retryMaxAttempts int
 	retryBaseDelay   time.Duration
@@ -137,6 +145,10 @@ func New(cfg Config) (*Client, error) {
 		tenantID:         tenantID,
 		authToken:        authToken,
 		apiKey:           apiKey,
+		userAgent:        strings.TrimSpace(cfg.UserAgent),
+		provisionedVia:   strings.TrimSpace(strings.ToLower(cfg.ProvisionedVia)),
+		provisioner:      strings.TrimSpace(cfg.Provisioner),
+		provisionerVer:   strings.TrimSpace(cfg.ProvisionerVersion),
 		httpClient:       &http.Client{Timeout: requestTimeout, Transport: transport},
 		retryMaxAttempts: retryMaxAttempts,
 		retryBaseDelay:   retryBaseDelay,
@@ -205,6 +217,18 @@ func (c *Client) doJSON(
 			req.Header.Set("X-Api-Key", c.apiKey)
 		} else {
 			req.Header.Set("Authorization", "Bearer "+c.authToken)
+		}
+		if c.userAgent != "" {
+			req.Header.Set("User-Agent", c.userAgent)
+		}
+		if c.provisionedVia != "" {
+			req.Header.Set("X-Aten-Provisioned-Via", c.provisionedVia)
+		}
+		if c.provisioner != "" {
+			req.Header.Set("X-Aten-Provisioner", c.provisioner)
+		}
+		if c.provisionerVer != "" {
+			req.Header.Set("X-Aten-Provisioner-Version", c.provisionerVer)
 		}
 		if payload != nil {
 			req.Header.Set("Content-Type", "application/json")

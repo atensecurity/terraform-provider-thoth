@@ -2,6 +2,14 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.11 - 2026-05-11
+
+### Added
+
+- Provider requests now include provisioning attribution metadata headers and a
+  release-aware user agent so GovAPI/dashboard can identify Terraform-managed
+  policy bundle updates.
+
 ## 0.1.10 - 2026-05-11
 
 ### Fixed

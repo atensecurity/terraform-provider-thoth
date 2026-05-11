@@ -268,11 +268,28 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		orgAPIKey = envOrgAPIKey
 	}
 
+	provisionedVia := "terraform"
+	provisionerName := "terraform-provider-thoth"
+	if strings.TrimSpace(os.Getenv("PULUMI_COMMAND")) != "" ||
+		strings.TrimSpace(os.Getenv("PULUMI_HOME")) != "" ||
+		strings.TrimSpace(os.Getenv("PULUMI_PROJECT")) != "" {
+		provisionedVia = "pulumi"
+		provisionerName = "pulumi-thoth"
+	}
+	providerVersion := strings.TrimSpace(p.version)
+	if providerVersion == "" {
+		providerVersion = "dev"
+	}
+
 	cfg := client.Config{
 		BaseURL:               apiBaseURL,
 		TenantID:              tenantID,
 		AuthToken:             token,
 		APIKey:                orgAPIKey,
+		UserAgent:             fmt.Sprintf("%s/%s", provisionerName, providerVersion),
+		ProvisionedVia:        provisionedVia,
+		Provisioner:           provisionerName,
+		ProvisionerVersion:    providerVersion,
 		RetryMaxAttempts:      int(int64ValueWithDefault(config.RetryMaxAttempts, 4)),
 		RetryBaseDelay:        time.Duration(int64ValueWithDefault(config.RetryBaseDelayMs, 300)) * time.Millisecond,
 		RetryMaxDelay:         time.Duration(int64ValueWithDefault(config.RetryMaxDelayMs, 5000)) * time.Millisecond,
