@@ -1,0 +1,14 @@
+---
+page_title: "thoth_agent_latest_forensics Data Source"
+subcategory: "Governance"
+description: |-
+  Reads the latest known session forensics timeline for one agent.
+---
+
+# data source: thoth_agent_latest_forensics
+
+```terraform
+data "thoth_agent_latest_forensics" "agent" {
+  agent_id = "agent-prod-payments"
+}
+```

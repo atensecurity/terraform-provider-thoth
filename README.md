@@ -147,6 +147,9 @@ and run in `enforce` mode. You can optionally scope assignments by:
 - `thoth_evidence_chain`
 - `thoth_evidence_verify`
 - `thoth_evidence_bundle`
+- `thoth_session_forensics`
+- `thoth_incident_forensics`
+- `thoth_agent_latest_forensics`
 - `thoth_fleets`
 - `thoth_fleet`
 - `thoth_tenant_settings`

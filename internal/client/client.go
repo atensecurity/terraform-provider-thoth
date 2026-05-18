@@ -585,6 +585,39 @@ func (c *Client) GetSessionEvidenceBundle(ctx context.Context, sessionID string)
 	return out, err
 }
 
+func (c *Client) GetSessionForensics(ctx context.Context, sessionID string) (map[string]any, error) {
+	normalized := strings.TrimSpace(sessionID)
+	if normalized == "" {
+		return nil, errors.New("session_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("sessions/%s/forensics", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetIncidentForensics(ctx context.Context, incidentID string) (map[string]any, error) {
+	normalized := strings.TrimSpace(incidentID)
+	if normalized == "" {
+		return nil, errors.New("incident_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("incidents/%s/forensics", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetAgentLatestForensics(ctx context.Context, agentID string) (map[string]any, error) {
+	normalized := strings.TrimSpace(agentID)
+	if normalized == "" {
+		return nil, errors.New("agent_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("agents/%s/forensics/latest", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) GetBillingPricing(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.billingPath("pricing"), nil, nil, &out, true)

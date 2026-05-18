@@ -1,0 +1,14 @@
+---
+page_title: "thoth_session_forensics Data Source"
+subcategory: "Governance"
+description: |-
+  Reads full investigation forensics for a specific session.
+---
+
+# data source: thoth_session_forensics
+
+```terraform
+data "thoth_session_forensics" "session" {
+  session_id = "sess_01J..."
+}
+```
