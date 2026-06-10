@@ -1,0 +1,23 @@
+---
+page_title: "thoth_mcp_vendor Resource"
+subcategory: "MCP"
+description: |-
+  Manages a tenant MCP vendor registry entry and host allowlist mapping.
+---
+
+# thoth_mcp_vendor
+
+Creates or updates an MCP vendor allowlist entry used by Thoth enforcement.
+
+## Example Usage
+
+```terraform
+resource "thoth_mcp_vendor" "openai" {
+  vendor_id     = "openai"
+  display_name  = "OpenAI"
+  approved      = true
+  host_patterns = ["api.openai.com", "*.openai.com"]
+  source        = "manual"
+  notes         = "Approved by security engineering."
+}
+```

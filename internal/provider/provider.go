@@ -326,6 +326,8 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewBrowserProviderResource,
 		resources.NewBrowserPolicyResource,
 		resources.NewBrowserEnrollmentResource,
+		resources.NewMCPVendorResource,
+		resources.NewMCPCatalogVerifyResource,
 		resources.NewFleetAPIKeyResource,
 		resources.NewEndpointAPIKeyResource,
 		resources.NewAgentAPIKeyResource,
@@ -386,6 +388,9 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewBrowserProvidersDataSource,
 		data_sources.NewBrowserPoliciesDataSource,
 		data_sources.NewBrowserEnrollmentsDataSource,
+		data_sources.NewMCPVendorsDataSource,
+		data_sources.NewMCPVendorDataSource,
+		data_sources.NewMCPInventoryReportDataSource,
 	}
 }
 

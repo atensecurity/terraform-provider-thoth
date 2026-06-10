@@ -91,6 +91,41 @@ func TestAccMDMProvider_basic(t *testing.T) {
 	})
 }
 
+func TestAccMCPVendor_basic(t *testing.T) {
+	if os.Getenv("TF_ACC") != "1" {
+		t.Skip("set TF_ACC=1 to run acceptance tests")
+	}
+
+	resourceName := "thoth_mcp_vendor.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMCPVendorConfig("openai", "OpenAI", true),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("vendor_id"), knownvalue.StringExact("openai")),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("display_name"), knownvalue.StringExact("OpenAI")),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("approved"), knownvalue.Bool(true)),
+				},
+			},
+			{
+				Config: testAccMCPVendorConfig("openai", "OpenAI Updated", false),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("display_name"), knownvalue.StringExact("OpenAI Updated")),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("approved"), knownvalue.Bool(false)),
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccWebhookTest_requiresConfiguredWebhook(t *testing.T) {
 	if os.Getenv("TF_ACC") != "1" {
 		t.Skip("set TF_ACC=1 to run acceptance tests")
@@ -178,6 +213,19 @@ resource "thoth_mdm_provider" "test" {
   })
 }
 `, provider, name)
+}
+
+func testAccMCPVendorConfig(vendorID, displayName string, approved bool) string {
+	return testAccProviderConfig() + fmt.Sprintf(`
+resource "thoth_mcp_vendor" "test" {
+  vendor_id     = %q
+  display_name  = %q
+  approved      = %t
+  host_patterns = ["api.openai.com", "*.openai.com"]
+  source        = "manual"
+  notes         = "managed by terraform acceptance tests"
+}
+`, vendorID, displayName, approved)
 }
 
 func testAccWebhookTestOnlyConfig() string {
