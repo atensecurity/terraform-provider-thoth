@@ -2,6 +2,22 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.12 - 2026-06-09
+
+### Added
+
+- Added MCP vendor registry support:
+  - `thoth_mcp_vendor` resource
+  - `thoth_mcp_vendors` data source
+- Added MCP inventory and verification surfaces:
+  - `thoth_mcp_inventory_report` data source
+  - `thoth_mcp_catalog_verify` resource
+
+### Fixed
+
+- Stabilized `thoth_mcp_vendor.host_patterns` state behavior to avoid apply/read
+  inconsistencies caused by server-side ordering differences.
+
 ## 0.1.11 - 2026-05-11
 
 ### Added
