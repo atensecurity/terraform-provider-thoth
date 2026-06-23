@@ -1,0 +1,20 @@
+---
+page_title: "thoth_policy_change_artifacts Data Source"
+subcategory: "Governance"
+description: |-
+  Lists policy change artifacts with optional environment filter.
+---
+
+# thoth_policy_change_artifacts
+
+Lists policy change artifacts with optional environment filter.
+
+## Example Usage
+
+```terraform
+data "thoth_policy_change_artifacts" "prod" {
+  target_environment = "prod"
+  limit              = 50
+  offset             = 0
+}
+```

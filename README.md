@@ -11,6 +11,7 @@ Terraform provider for Aten Security Thoth headless AI Governance Control Plane.
 - Terraform Registry: https://registry.terraform.io/providers/atensecurity/thoth/latest
 - Aten Security docs: https://docs.atensecurity.com/docs/terraform-provider/
 - Basic example: https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic
+- Policy exception workflow example: https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/policy-exception-workflow
 
 This provider exposes GovAPI-backed resources to manage:
 
@@ -106,6 +107,9 @@ omit explicit auth fields.
 - `thoth_policy_sync`
 - `thoth_policy_bundle`
 - `thoth_approval_decision`
+- `thoth_policy_exception`
+- `thoth_policy_exception_review`
+- `thoth_policy_change_artifact_apply`
 - `thoth_pack_assignment`
 - `thoth_pack_assignment_bulk`
 
@@ -135,6 +139,10 @@ and run in `enforce` mode. You can optionally scope assignments by:
 ## Provider Data Sources
 
 - `thoth_approvals`
+- `thoth_policy_exception`
+- `thoth_policy_exceptions`
+- `thoth_policy_change_artifact`
+- `thoth_policy_change_artifacts`
 - `thoth_api_key_authorization`
 - `thoth_api_keys`
 - `thoth_billing_pricing`

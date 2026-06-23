@@ -1,0 +1,18 @@
+---
+page_title: "thoth_policy_change_artifact Data Source"
+subcategory: "Governance"
+description: |-
+  Reads a policy change artifact for an exception request.
+---
+
+# thoth_policy_change_artifact
+
+Reads a policy change artifact for an exception request.
+
+## Example Usage
+
+```terraform
+data "thoth_policy_change_artifact" "crm_export" {
+  request_id = thoth_policy_exception.crm_export.request_id
+}
+```

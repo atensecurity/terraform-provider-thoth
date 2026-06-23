@@ -1,0 +1,20 @@
+---
+page_title: "thoth_policy_exceptions Data Source"
+subcategory: "Governance"
+description: |-
+  Lists policy exception requests with optional filters.
+---
+
+# thoth_policy_exceptions
+
+Lists policy exception requests with optional filters.
+
+## Example Usage
+
+```terraform
+data "thoth_policy_exceptions" "pending" {
+  status = "pending"
+  limit  = 50
+  offset = 0
+}
+```

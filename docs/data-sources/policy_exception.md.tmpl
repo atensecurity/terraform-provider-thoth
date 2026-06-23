@@ -1,0 +1,18 @@
+---
+page_title: "thoth_policy_exception Data Source"
+subcategory: "Governance"
+description: |-
+  Reads a single policy exception request by request ID.
+---
+
+# thoth_policy_exception
+
+Reads a single policy exception request by request ID.
+
+## Example Usage
+
+```terraform
+data "thoth_policy_exception" "crm_export" {
+  request_id = thoth_policy_exception.crm_export.request_id
+}
+```

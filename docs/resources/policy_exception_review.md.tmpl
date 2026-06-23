@@ -1,0 +1,23 @@
+---
+page_title: "thoth_policy_exception_review Resource"
+subcategory: "Governance"
+description: |-
+  Submits a review decision for a policy exception request.
+---
+
+# thoth_policy_exception_review
+
+Submits a review decision for a policy exception request.
+
+## Example Usage
+
+```terraform
+resource "thoth_policy_exception_review" "crm_export_review" {
+  request_id         = thoth_policy_exception.crm_export.request_id
+  review_decision    = "approve"
+  reviewed_by        = "usec-ops"
+  review_notes       = "Approved with temporary override while policy patch rolls out"
+  owner              = "security-platform"
+  target_environment = "prod"
+}
+```

@@ -1,0 +1,25 @@
+---
+page_title: "thoth_policy_exception Resource"
+subcategory: "Governance"
+description: |-
+  Creates and reads a policy exception request.
+---
+
+# thoth_policy_exception
+
+Creates and reads a policy exception request.
+
+## Example Usage
+
+```terraform
+resource "thoth_policy_exception" "crm_export" {
+  violation_id           = "vio-7f8c"
+  agent_id               = "crm-agent"
+  tool_name              = "export_records"
+  requested_by           = "udev123"
+  business_justification = "Month-end reconciliation export for finance close"
+  frequency_estimate     = "weekly"
+  data_sensitivity       = "financial"
+  alternatives_considered = "Manual CSV export is too slow and error-prone"
+}
+```
