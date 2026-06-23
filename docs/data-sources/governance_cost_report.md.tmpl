@@ -13,3 +13,9 @@ data "thoth_governance_cost_report" "cost" {
   rate = 0.003
 }
 ```
+
+`response_json` includes the full payload, while typed fields expose pricing provenance:
+
+- `pricing_source`, `pricing_version`, `pricing_sha256`, `pricing_updated_at`
+- `priced_with_catalog_count`, `event_estimated_fallbacks`, `flat_rate_fallbacks`
+- `unresolved_models`

@@ -22,4 +22,12 @@ Reads governance cost report payload for token usage and spend.
 
 ### Read-Only
 
+- `event_estimated_fallbacks` (Number) Number of rows that used event-provided estimated_cost_usd fallback.
+- `flat_rate_fallbacks` (Number) Number of rows that used flat-rate per-1k fallback pricing.
+- `priced_with_catalog_count` (Number) Number of provider/model rows priced directly from the model pricing catalog.
+- `pricing_sha256` (String) SHA256 digest for the pricing catalog payload used by GovAPI.
+- `pricing_source` (String) Pricing source used to compute model costs (for example litellm_catalog:path, litellm_catalog:url, event_estimated_cost, flat_rate_default).
+- `pricing_updated_at` (String) RFC3339 timestamp when GovAPI last refreshed pricing catalog data.
+- `pricing_version` (String) Pricing catalog version identifier (sha256 prefix) when catalog-backed pricing is active.
 - `response_json` (String) Cost report payload as JSON.
+- `unresolved_models` (List of String) Provider/model keys that did not match the pricing catalog and therefore required fallback pricing.

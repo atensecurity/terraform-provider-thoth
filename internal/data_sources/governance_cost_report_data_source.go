@@ -19,9 +19,17 @@ type governanceCostReportDataSource struct {
 }
 
 type governanceCostReportModel struct {
-	Days         types.Int64   `tfsdk:"days"`
-	Rate         types.Float64 `tfsdk:"rate"`
-	ResponseJSON types.String  `tfsdk:"response_json"`
+	Days                    types.Int64   `tfsdk:"days"`
+	Rate                    types.Float64 `tfsdk:"rate"`
+	PricingSource           types.String  `tfsdk:"pricing_source"`
+	PricingVersion          types.String  `tfsdk:"pricing_version"`
+	PricingSHA256           types.String  `tfsdk:"pricing_sha256"`
+	PricingUpdatedAt        types.String  `tfsdk:"pricing_updated_at"`
+	PricedWithCatalogCount  types.Int64   `tfsdk:"priced_with_catalog_count"`
+	EventEstimatedFallbacks types.Int64   `tfsdk:"event_estimated_fallbacks"`
+	FlatRateFallbacks       types.Int64   `tfsdk:"flat_rate_fallbacks"`
+	UnresolvedModels        types.List    `tfsdk:"unresolved_models"`
+	ResponseJSON            types.String  `tfsdk:"response_json"`
 }
 
 func NewGovernanceCostReportDataSource() datasource.DataSource {
@@ -47,6 +55,39 @@ func (d *governanceCostReportDataSource) Schema(_ context.Context, _ datasource.
 			"response_json": schema.StringAttribute{
 				Computed:    true,
 				Description: "Cost report payload as JSON.",
+			},
+			"pricing_source": schema.StringAttribute{
+				Computed:    true,
+				Description: "Pricing source used to compute model costs (for example litellm_catalog:path, litellm_catalog:url, event_estimated_cost, flat_rate_default).",
+			},
+			"pricing_version": schema.StringAttribute{
+				Computed:    true,
+				Description: "Pricing catalog version identifier (sha256 prefix) when catalog-backed pricing is active.",
+			},
+			"pricing_sha256": schema.StringAttribute{
+				Computed:    true,
+				Description: "SHA256 digest for the pricing catalog payload used by GovAPI.",
+			},
+			"pricing_updated_at": schema.StringAttribute{
+				Computed:    true,
+				Description: "RFC3339 timestamp when GovAPI last refreshed pricing catalog data.",
+			},
+			"priced_with_catalog_count": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Number of provider/model rows priced directly from the model pricing catalog.",
+			},
+			"event_estimated_fallbacks": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Number of rows that used event-provided estimated_cost_usd fallback.",
+			},
+			"flat_rate_fallbacks": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Number of rows that used flat-rate per-1k fallback pricing.",
+			},
+			"unresolved_models": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "Provider/model keys that did not match the pricing catalog and therefore required fallback pricing.",
 			},
 		},
 	}
@@ -81,6 +122,15 @@ func (d *governanceCostReportDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
+	pricingEvidence := tfhelpers.GetMap(result, "pricing_evidence")
+	state.PricingSource = types.StringValue(tfhelpers.GetString(result, "pricing_source"))
+	state.PricingVersion = types.StringValue(tfhelpers.GetString(result, "pricing_version"))
+	state.PricingSHA256 = types.StringValue(tfhelpers.GetString(result, "pricing_sha256"))
+	state.PricingUpdatedAt = types.StringValue(tfhelpers.GetString(result, "pricing_updated_at"))
+	state.PricedWithCatalogCount = types.Int64Value(tfhelpers.GetInt64(pricingEvidence, "priced_with_catalog_count"))
+	state.EventEstimatedFallbacks = types.Int64Value(tfhelpers.GetInt64(pricingEvidence, "event_estimated_fallbacks"))
+	state.FlatRateFallbacks = types.Int64Value(tfhelpers.GetInt64(pricingEvidence, "flat_rate_fallbacks"))
+	state.UnresolvedModels = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(pricingEvidence, "unresolved_models"))
 	state.ResponseJSON = types.StringValue(tfhelpers.ToJSONString(result))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
