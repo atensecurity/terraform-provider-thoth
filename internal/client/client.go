@@ -822,6 +822,91 @@ func (c *Client) GetPolicySyncStatus(ctx context.Context) (map[string]any, error
 	return out, err
 }
 
+func (c *Client) CreatePolicyException(ctx context.Context, payload map[string]any) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("policy-exceptions"), nil, payload, &out, false)
+	return out, err
+}
+
+func (c *Client) ListPolicyExceptions(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("policy-exceptions"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetPolicyException(ctx context.Context, requestID string) (map[string]any, error) {
+	normalized := strings.TrimSpace(requestID)
+	if normalized == "" {
+		return nil, errors.New("request_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-exceptions/%s", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) ReviewPolicyException(
+	ctx context.Context,
+	requestID string,
+	payload map[string]any,
+) (map[string]any, error) {
+	normalized := strings.TrimSpace(requestID)
+	if normalized == "" {
+		return nil, errors.New("request_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-exceptions/%s/review", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodPatch, path, nil, payload, &out, false)
+	return out, err
+}
+
+func (c *Client) ListPolicyChangeArtifacts(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("policy-change-artifacts"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetPolicyChangeArtifact(ctx context.Context, requestID string) (map[string]any, error) {
+	normalized := strings.TrimSpace(requestID)
+	if normalized == "" {
+		return nil, errors.New("request_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-change-artifacts/%s", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GeneratePolicyChangeArtifact(
+	ctx context.Context,
+	requestID string,
+	payload map[string]any,
+) (map[string]any, error) {
+	normalized := strings.TrimSpace(requestID)
+	if normalized == "" {
+		return nil, errors.New("request_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-change-artifacts/%s/generate", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodPost, path, nil, payload, &out, false)
+	return out, err
+}
+
+func (c *Client) ApplyPolicyChangeArtifact(
+	ctx context.Context,
+	requestID string,
+	payload map[string]any,
+) (map[string]any, error) {
+	normalized := strings.TrimSpace(requestID)
+	if normalized == "" {
+		return nil, errors.New("request_id must be non-empty")
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("policy-change-artifacts/%s/apply", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodPost, path, nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) ListPolicyBundles(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("policy-bundles"), query, nil, &out, true)

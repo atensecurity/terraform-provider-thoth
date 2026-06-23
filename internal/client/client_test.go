@@ -278,3 +278,149 @@ func TestVerifyMCPCatalogPostsPayloadAndEnv(t *testing.T) {
 		t.Fatalf("response.policy_count = %#v", policyCount)
 	}
 }
+
+func TestPolicyExceptionEndpoints(t *testing.T) {
+	t.Parallel()
+
+	var calls []string
+	var listTenantQuery string
+	var reviewTenantQuery string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/example-tenant/thoth/policy-exceptions":
+			_, _ = w.Write([]byte(`{"request_id":"req-1","status":"pending"}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/example-tenant/thoth/policy-exceptions":
+			listTenantQuery = r.URL.Query().Get("tenant_id")
+			_, _ = w.Write([]byte(`{"data":[{"request_id":"req-1"}],"total":1}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/example-tenant/thoth/policy-exceptions/req-1":
+			_, _ = w.Write([]byte(`{"request_id":"req-1","status":"under_review"}`))
+		case r.Method == http.MethodPatch && r.URL.Path == "/example-tenant/thoth/policy-exceptions/req-1/review":
+			reviewTenantQuery = r.URL.Query().Get("tenant_id")
+			_, _ = w.Write([]byte(`{"request_id":"req-1","status":"approved"}`))
+		default:
+			t.Fatalf("unexpected call %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	c, err := New(Config{
+		BaseURL:   srv.URL,
+		TenantID:  "example-tenant",
+		AuthToken: "token",
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	if _, err := c.CreatePolicyException(context.Background(), map[string]any{
+		"violation_id":           "vio-1",
+		"requested_by":           "UDEV1",
+		"business_justification": "Need export",
+		"frequency_estimate":     "weekly",
+		"data_sensitivity":       "internal",
+	}); err != nil {
+		t.Fatalf("CreatePolicyException() error = %v", err)
+	}
+	if _, err := c.ListPolicyExceptions(context.Background(), map[string]string{"tenant_id": "example-tenant"}); err != nil {
+		t.Fatalf("ListPolicyExceptions() error = %v", err)
+	}
+	if _, err := c.GetPolicyException(context.Background(), "req-1"); err != nil {
+		t.Fatalf("GetPolicyException() error = %v", err)
+	}
+	if _, err := c.ReviewPolicyException(context.Background(), "req-1", map[string]any{
+		"review_decision": "approve",
+		"reviewed_by":     "USEC1",
+	}); err != nil {
+		t.Fatalf("ReviewPolicyException() error = %v", err)
+	}
+
+	want := []string{
+		"POST /example-tenant/thoth/policy-exceptions",
+		"GET /example-tenant/thoth/policy-exceptions",
+		"GET /example-tenant/thoth/policy-exceptions/req-1",
+		"PATCH /example-tenant/thoth/policy-exceptions/req-1/review",
+	}
+	if len(calls) != len(want) {
+		t.Fatalf("calls = %#v, want %#v", calls, want)
+	}
+	for i := range want {
+		if calls[i] != want[i] {
+			t.Fatalf("calls[%d] = %q, want %q", i, calls[i], want[i])
+		}
+	}
+	if listTenantQuery != "example-tenant" {
+		t.Fatalf("list tenant query = %q", listTenantQuery)
+	}
+	if reviewTenantQuery != "" {
+		t.Fatalf("review tenant query = %q, expected empty", reviewTenantQuery)
+	}
+}
+
+func TestPolicyChangeArtifactEndpoints(t *testing.T) {
+	t.Parallel()
+
+	var calls []string
+	var listQuery string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/example-tenant/thoth/policy-change-artifacts":
+			listQuery = r.URL.Query().Get("target_environment")
+			_, _ = w.Write([]byte(`{"data":[{"artifact_id":"art-1"}],"total":1}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/example-tenant/thoth/policy-change-artifacts/req-1":
+			_, _ = w.Write([]byte(`{"artifact_id":"art-1","request_id":"req-1"}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/example-tenant/thoth/policy-change-artifacts/req-1/generate":
+			_, _ = w.Write([]byte(`{"artifact_id":"art-1","request_id":"req-1"}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/example-tenant/thoth/policy-change-artifacts/req-1/apply":
+			_, _ = w.Write([]byte(`{"artifact_id":"art-1","request_id":"req-1","apply_channel":"govapi"}`))
+		default:
+			t.Fatalf("unexpected call %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	c, err := New(Config{
+		BaseURL:   srv.URL,
+		TenantID:  "example-tenant",
+		AuthToken: "token",
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	if _, err := c.ListPolicyChangeArtifacts(context.Background(), map[string]string{"target_environment": "prod"}); err != nil {
+		t.Fatalf("ListPolicyChangeArtifacts() error = %v", err)
+	}
+	if _, err := c.GetPolicyChangeArtifact(context.Background(), "req-1"); err != nil {
+		t.Fatalf("GetPolicyChangeArtifact() error = %v", err)
+	}
+	if _, err := c.GeneratePolicyChangeArtifact(context.Background(), "req-1", map[string]any{"owner": "security"}); err != nil {
+		t.Fatalf("GeneratePolicyChangeArtifact() error = %v", err)
+	}
+	if _, err := c.ApplyPolicyChangeArtifact(context.Background(), "req-1", map[string]any{"applied_by": "USEC2"}); err != nil {
+		t.Fatalf("ApplyPolicyChangeArtifact() error = %v", err)
+	}
+
+	want := []string{
+		"GET /example-tenant/thoth/policy-change-artifacts",
+		"GET /example-tenant/thoth/policy-change-artifacts/req-1",
+		"POST /example-tenant/thoth/policy-change-artifacts/req-1/generate",
+		"POST /example-tenant/thoth/policy-change-artifacts/req-1/apply",
+	}
+	if len(calls) != len(want) {
+		t.Fatalf("calls = %#v, want %#v", calls, want)
+	}
+	for i := range want {
+		if calls[i] != want[i] {
+			t.Fatalf("calls[%d] = %q, want %q", i, calls[i], want[i])
+		}
+	}
+	if listQuery != "prod" {
+		t.Fatalf("target_environment query = %q", listQuery)
+	}
+}
