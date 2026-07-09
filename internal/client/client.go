@@ -584,6 +584,16 @@ func (c *Client) GetMCPInventoryReport(ctx context.Context, windowHours int64) (
 	return out, err
 }
 
+func (c *Client) GetMCPInventoryDigest(ctx context.Context, windowHours int64) (map[string]any, error) {
+	out := map[string]any{}
+	query := map[string]string{}
+	if windowHours > 0 {
+		query["window_hours"] = strconv.FormatInt(windowHours, 10)
+	}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("mcp/inventory/digest"), query, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) VerifyMCPCatalog(ctx context.Context, environment string, payload map[string]any) (map[string]any, error) {
 	out := map[string]any{}
 	query := map[string]string{}
@@ -1076,6 +1086,31 @@ func (c *Client) GetReportsOverview(ctx context.Context, query map[string]string
 func (c *Client) GetCostReport(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("reports/cost"), query, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) GetExecutiveSummary(ctx context.Context, query map[string]string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(
+		ctx,
+		http.MethodGet,
+		c.tenantPath("reports/executive-summary"),
+		query,
+		nil,
+		&out,
+		true,
+	)
+	return out, err
+}
+
+func (c *Client) GetBoardIncidentSummary(ctx context.Context, violationID string) (map[string]any, error) {
+	out := map[string]any{}
+	normalized := strings.TrimSpace(violationID)
+	if normalized == "" {
+		return nil, errors.New("violation_id must be non-empty")
+	}
+	path := c.tenantPath(fmt.Sprintf("reports/board-incident/%s", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, nil, nil, &out, true)
 	return out, err
 }
 

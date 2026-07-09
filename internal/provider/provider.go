@@ -380,6 +380,8 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewGovernanceDay7ReportDataSource,
 		data_sources.NewGovernanceReportsOverviewDataSource,
 		data_sources.NewGovernanceCostReportDataSource,
+		data_sources.NewGovernanceExecutiveSummaryDataSource,
+		data_sources.NewGovernanceBoardIncidentSummaryDataSource,
 		data_sources.NewReportDataDataSource,
 		data_sources.NewPolicyBundlesDataSource,
 		data_sources.NewEffectivePolicyBundlesDataSource,
@@ -398,6 +400,7 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewMCPVendorsDataSource,
 		data_sources.NewMCPVendorDataSource,
 		data_sources.NewMCPInventoryReportDataSource,
+		data_sources.NewMCPInventoryDigestDataSource,
 	}
 }
 

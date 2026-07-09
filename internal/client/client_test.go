@@ -226,6 +226,45 @@ func TestGetMCPInventoryReportUsesWindowHoursQuery(t *testing.T) {
 	}
 }
 
+func TestGetMCPInventoryDigestUsesWindowHoursQuery(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	var gotWindow string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotWindow = r.URL.Query().Get("window_hours")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(
+			[]byte(`{"window_hours":168,"total_endpoints":2,"unapproved_endpoints":1,"unapproved_calls":3}`),
+		)
+	}))
+	defer srv.Close()
+
+	c, err := New(Config{
+		BaseURL:   srv.URL,
+		TenantID:  "example-tenant",
+		AuthToken: "token",
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	resp, err := c.GetMCPInventoryDigest(context.Background(), 168)
+	if err != nil {
+		t.Fatalf("GetMCPInventoryDigest() error = %v", err)
+	}
+	if gotPath != "/example-tenant/thoth/mcp/inventory/digest" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if gotWindow != "168" {
+		t.Fatalf("window_hours query = %q", gotWindow)
+	}
+	if total := resp["total_endpoints"]; total != float64(2) {
+		t.Fatalf("response.total_endpoints = %#v", total)
+	}
+}
+
 func TestVerifyMCPCatalogPostsPayloadAndEnv(t *testing.T) {
 	t.Parallel()
 
@@ -276,6 +315,84 @@ func TestVerifyMCPCatalogPostsPayloadAndEnv(t *testing.T) {
 	}
 	if policyCount := resp["policy_count"]; policyCount != float64(3) {
 		t.Fatalf("response.policy_count = %#v", policyCount)
+	}
+}
+
+func TestGetExecutiveSummaryUsesDaysAndRateQuery(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	var gotDays string
+	var gotRate string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotDays = r.URL.Query().Get("days")
+		gotRate = r.URL.Query().Get("rate")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"window_days":7,"summary":"ok"}`))
+	}))
+	defer srv.Close()
+
+	c, err := New(Config{
+		BaseURL:   srv.URL,
+		TenantID:  "example-tenant",
+		AuthToken: "token",
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	resp, err := c.GetExecutiveSummary(
+		context.Background(),
+		map[string]string{"days": "7", "rate": "0.021"},
+	)
+	if err != nil {
+		t.Fatalf("GetExecutiveSummary() error = %v", err)
+	}
+
+	if gotPath != "/example-tenant/thoth/reports/executive-summary" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if gotDays != "7" {
+		t.Fatalf("days query = %q", gotDays)
+	}
+	if gotRate != "0.021" {
+		t.Fatalf("rate query = %q", gotRate)
+	}
+	if got := resp["summary"]; got != "ok" {
+		t.Fatalf("response.summary = %#v", got)
+	}
+}
+
+func TestGetBoardIncidentSummaryUsesViolationPath(t *testing.T) {
+	t.Parallel()
+
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"violation_id":"vio-123","incident":{"decision":"BLOCK"}}`))
+	}))
+	defer srv.Close()
+
+	c, err := New(Config{
+		BaseURL:   srv.URL,
+		TenantID:  "example-tenant",
+		AuthToken: "token",
+	})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	resp, err := c.GetBoardIncidentSummary(context.Background(), "vio-123")
+	if err != nil {
+		t.Fatalf("GetBoardIncidentSummary() error = %v", err)
+	}
+	if gotPath != "/example-tenant/thoth/reports/board-incident/vio-123" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if got := resp["violation_id"]; got != "vio-123" {
+		t.Fatalf("response.violation_id = %#v", got)
 	}
 }
 
