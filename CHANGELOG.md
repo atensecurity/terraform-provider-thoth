@@ -2,6 +2,33 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.13 - 2026-07-09
+
+### Added
+
+- Added policy-exception workflow resources:
+  - `thoth_policy_exception`
+  - `thoth_policy_exception_review`
+  - `thoth_policy_change_artifact_apply`
+- Added policy-exception workflow data sources:
+  - `thoth_policy_exception`
+  - `thoth_policy_exceptions`
+  - `thoth_policy_change_artifact`
+  - `thoth_policy_change_artifacts`
+- Added governance + MCP summary data sources:
+  - `thoth_governance_executive_summary`
+  - `thoth_governance_board_incident_summary`
+  - `thoth_mcp_inventory_digest`
+- Added policy-exception workflow example under
+  `examples/policy-exception-workflow`.
+
+### Changed
+
+- Expanded governance cost report coverage to include pricing-catalog metadata,
+  fallback counters, and unresolved-model visibility fields.
+- Refreshed provider docs/README for the new policy exception and governance
+  summary surfaces.
+
 ## 0.1.12 - 2026-06-09
 
 ### Added
