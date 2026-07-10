@@ -2,6 +2,13 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.14 - 2026-07-10
+
+### Changed
+
+- Release alignment patch to unblock downstream Pulumi provider `v0.1.14`
+  publishing and registry metadata refresh.
+
 ## 0.1.13 - 2026-07-09
 
 ### Added
