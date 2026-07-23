@@ -2,6 +2,14 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.15 - 2026-07-23
+
+### Fixed
+
+- Updated provider docs for Pulumi Registry compatibility by converting
+  markdown cross-links to extensionless paths and replacing bare SDK URLs with
+  explicit markdown links.
+
 ## 0.1.14 - 2026-07-10
 
 ### Changed
