@@ -19,9 +19,11 @@ type governanceExecutiveSummaryDataSource struct {
 }
 
 type governanceExecutiveSummaryModel struct {
-	Days         types.Int64   `tfsdk:"days"`
-	Rate         types.Float64 `tfsdk:"rate"`
-	ResponseJSON types.String  `tfsdk:"response_json"`
+	Days                       types.Int64   `tfsdk:"days"`
+	Rate                       types.Float64 `tfsdk:"rate"`
+	MCPDeviationAlerts         types.Int64   `tfsdk:"mcp_deviation_alerts"`
+	MCPCriticalDeviationAlerts types.Int64   `tfsdk:"mcp_critical_deviation_alerts"`
+	ResponseJSON               types.String  `tfsdk:"response_json"`
 }
 
 func NewGovernanceExecutiveSummaryDataSource() datasource.DataSource {
@@ -51,6 +53,14 @@ func (d *governanceExecutiveSummaryDataSource) Schema(
 			"rate": schema.Float64Attribute{
 				Optional:    true,
 				Description: "Optional custom pricing rate in USD per 1K tokens.",
+			},
+			"mcp_deviation_alerts": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Total MCP deviation alerts in the executive summary window.",
+			},
+			"mcp_critical_deviation_alerts": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Critical MCP deviation alerts in the executive summary window.",
 			},
 			"response_json": schema.StringAttribute{
 				Computed:    true,
@@ -97,6 +107,14 @@ func (d *governanceExecutiveSummaryDataSource) Read(
 		return
 	}
 
+	alerts, critical := extractExecutiveMCPDeviationCounts(result)
+	state.MCPDeviationAlerts = types.Int64Value(alerts)
+	state.MCPCriticalDeviationAlerts = types.Int64Value(critical)
 	state.ResponseJSON = types.StringValue(tfhelpers.ToJSONString(result))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func extractExecutiveMCPDeviationCounts(result map[string]any) (int64, int64) {
+	kpis := tfhelpers.GetMap(result, "kpis")
+	return tfhelpers.GetInt64(kpis, "mcp_deviation_alerts"), tfhelpers.GetInt64(kpis, "mcp_critical_deviation_alerts")
 }

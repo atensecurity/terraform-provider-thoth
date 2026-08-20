@@ -27,17 +27,25 @@ type mcpVendorResource struct {
 }
 
 type mcpVendorModel struct {
-	ID           types.String `tfsdk:"id"`
-	TenantID     types.String `tfsdk:"tenant_id"`
-	VendorID     types.String `tfsdk:"vendor_id"`
-	DisplayName  types.String `tfsdk:"display_name"`
-	Approved     types.Bool   `tfsdk:"approved"`
-	HostPatterns types.List   `tfsdk:"host_patterns"`
-	Source       types.String `tfsdk:"source"`
-	Notes        types.String `tfsdk:"notes"`
-	LastSeenAt   types.String `tfsdk:"last_seen_at"`
-	CreatedAt    types.String `tfsdk:"created_at"`
-	UpdatedAt    types.String `tfsdk:"updated_at"`
+	ID                      types.String `tfsdk:"id"`
+	TenantID                types.String `tfsdk:"tenant_id"`
+	VendorID                types.String `tfsdk:"vendor_id"`
+	DisplayName             types.String `tfsdk:"display_name"`
+	Approved                types.Bool   `tfsdk:"approved"`
+	HostPatterns            types.List   `tfsdk:"host_patterns"`
+	ManifestSignatureStatus types.String `tfsdk:"manifest_signature_status"`
+	ManifestSignatureSigner types.String `tfsdk:"manifest_signature_signer"`
+	ManifestSignatureBundle types.String `tfsdk:"manifest_signature_bundle_ref"`
+	ManifestSignatureAt     types.String `tfsdk:"manifest_signature_verified_at"`
+	Capabilities            types.List   `tfsdk:"capabilities"`
+	RuntimeIdentity         types.String `tfsdk:"runtime_identity"`
+	EgressPolicyMode        types.String `tfsdk:"egress_policy_mode"`
+	EgressAllowedHosts      types.List   `tfsdk:"egress_allowed_host_patterns"`
+	Source                  types.String `tfsdk:"source"`
+	Notes                   types.String `tfsdk:"notes"`
+	LastSeenAt              types.String `tfsdk:"last_seen_at"`
+	CreatedAt               types.String `tfsdk:"created_at"`
+	UpdatedAt               types.String `tfsdk:"updated_at"`
 }
 
 func NewMCPVendorResource() resource.Resource {
@@ -81,6 +89,48 @@ func (r *mcpVendorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Required:    true,
 				ElementType: types.StringType,
 				Description: "Allowed host patterns for this vendor (for example api.openai.com).",
+			},
+			"manifest_signature_status": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Manifest signature verification status (verified, pending, failed).",
+			},
+			"manifest_signature_signer": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Signer identity for verified manifest signatures.",
+			},
+			"manifest_signature_bundle_ref": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Signature bundle reference used for manifest verification.",
+			},
+			"manifest_signature_verified_at": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "RFC3339 timestamp when manifest signature was verified.",
+			},
+			"capabilities": schema.ListAttribute{
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "Capability bindings this vendor/runtime identity is allowed to request.",
+			},
+			"runtime_identity": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Capability-scoped runtime identity used at action-time enforcement.",
+			},
+			"egress_policy_mode": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Egress policy mode for vendor traffic (enforce or observe).",
+			},
+			"egress_allowed_host_patterns": schema.ListAttribute{
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "Allowed egress host patterns enforced for this vendor/runtime identity.",
 			},
 			"source": schema.StringAttribute{
 				Optional:    true,
@@ -251,6 +301,56 @@ func (r *mcpVendorResource) createOrUpdate(
 	setStringIfKnown(payload, "notes", plan.Notes, prior.Notes)
 	setStringIfKnown(payload, "last_seen_at", plan.LastSeenAt, prior.LastSeenAt)
 
+	manifestStatus := resolveOptionalString(plan.ManifestSignatureStatus, prior.ManifestSignatureStatus)
+	manifestSigner := resolveOptionalString(plan.ManifestSignatureSigner, prior.ManifestSignatureSigner)
+	manifestBundleRef := resolveOptionalString(plan.ManifestSignatureBundle, prior.ManifestSignatureBundle)
+	manifestVerifiedAt := resolveOptionalString(plan.ManifestSignatureAt, prior.ManifestSignatureAt)
+	if manifestStatus != "" || manifestSigner != "" || manifestBundleRef != "" || manifestVerifiedAt != "" {
+		manifest := map[string]any{}
+		if manifestStatus != "" {
+			manifest["status"] = manifestStatus
+		}
+		if manifestSigner != "" {
+			manifest["signer"] = manifestSigner
+		}
+		if manifestBundleRef != "" {
+			manifest["bundle_ref"] = manifestBundleRef
+		}
+		if manifestVerifiedAt != "" {
+			manifest["verified_at"] = manifestVerifiedAt
+		}
+		payload["manifest_signature"] = manifest
+	}
+
+	capabilities := resolveOptionalStringList(ctx, plan.Capabilities, prior.Capabilities, diags)
+	if diags.HasError() {
+		return mcpVendorModel{}, false
+	}
+	if capabilities != nil {
+		payload["capabilities"] = capabilities
+	}
+
+	runtimeIdentity := resolveOptionalString(plan.RuntimeIdentity, prior.RuntimeIdentity)
+	if runtimeIdentity != "" {
+		payload["runtime_identity"] = runtimeIdentity
+	}
+
+	egressMode := resolveOptionalString(plan.EgressPolicyMode, prior.EgressPolicyMode)
+	egressHosts := resolveOptionalStringList(ctx, plan.EgressAllowedHosts, prior.EgressAllowedHosts, diags)
+	if diags.HasError() {
+		return mcpVendorModel{}, false
+	}
+	if egressMode != "" || egressHosts != nil {
+		egressPolicy := map[string]any{}
+		if egressMode != "" {
+			egressPolicy["mode"] = egressMode
+		}
+		if egressHosts != nil {
+			egressPolicy["allowed_host_patterns"] = egressHosts
+		}
+		payload["egress_policy"] = egressPolicy
+	}
+
 	var (
 		row map[string]any
 		err error
@@ -301,6 +401,20 @@ func flattenMCPVendor(ctx context.Context, row map[string]any, current mcpVendor
 		sort.Strings(resolvedHostPatterns)
 	}
 	next.HostPatterns = tfhelpers.StringSliceValue(resolvedHostPatterns)
+
+	manifest := tfhelpers.GetMap(row, "manifest_signature")
+	next.ManifestSignatureStatus = nullableString(manifest, "status")
+	next.ManifestSignatureSigner = nullableString(manifest, "signer")
+	next.ManifestSignatureBundle = nullableString(manifest, "bundle_ref")
+	next.ManifestSignatureAt = nullableString(manifest, "verified_at")
+
+	next.Capabilities = nullableStringSlice(row, "capabilities")
+	next.RuntimeIdentity = nullableString(row, "runtime_identity")
+
+	egressPolicy := tfhelpers.GetMap(row, "egress_policy")
+	next.EgressPolicyMode = nullableString(egressPolicy, "mode")
+	next.EgressAllowedHosts = nullableStringSlice(egressPolicy, "allowed_host_patterns")
+
 	next.Source = nullableString(row, "source")
 	next.Notes = nullableString(row, "notes")
 	next.LastSeenAt = nullableString(row, "last_seen_at")
@@ -343,4 +457,61 @@ func sameStringSet(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func resolveOptionalString(value, fallback types.String) string {
+	if !value.IsNull() && !value.IsUnknown() {
+		return strings.TrimSpace(value.ValueString())
+	}
+	if !fallback.IsNull() && !fallback.IsUnknown() {
+		return strings.TrimSpace(fallback.ValueString())
+	}
+	return ""
+}
+
+func resolveOptionalStringList(ctx context.Context, value, fallback types.List, diags *diag.Diagnostics) []string {
+	if !value.IsNull() && !value.IsUnknown() {
+		items := decodeStringList(ctx, value, diags)
+		if diags.HasError() {
+			return nil
+		}
+		return items
+	}
+	if !fallback.IsNull() && !fallback.IsUnknown() {
+		items := decodeStringList(ctx, fallback, diags)
+		if diags.HasError() {
+			return nil
+		}
+		return items
+	}
+	return nil
+}
+
+func decodeStringList(ctx context.Context, value types.List, diags *diag.Diagnostics) []string {
+	items := []string{}
+	diags.Append(value.ElementsAs(ctx, &items, false)...)
+	if diags.HasError() {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		trimmed := strings.TrimSpace(item)
+		if trimmed == "" {
+			continue
+		}
+		out = append(out, trimmed)
+	}
+	return out
+}
+
+func nullableStringSlice(m map[string]any, key string) types.List {
+	raw, ok := m[key]
+	if !ok || raw == nil {
+		return types.ListNull(types.StringType)
+	}
+	values := normalizeHostPatterns(tfhelpers.GetStringSlice(m, key))
+	if len(values) == 0 {
+		return tfhelpers.StringSliceValue([]string{})
+	}
+	return tfhelpers.StringSliceValue(values)
 }

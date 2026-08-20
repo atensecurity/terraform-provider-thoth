@@ -19,8 +19,11 @@ type governanceReportsOverviewDataSource struct {
 }
 
 type governanceReportsOverviewModel struct {
-	Days         types.Int64  `tfsdk:"days"`
-	ResponseJSON types.String `tfsdk:"response_json"`
+	Days                       types.Int64  `tfsdk:"days"`
+	MCPDeviationAlerts         types.Int64  `tfsdk:"mcp_deviation_alerts"`
+	MCPCriticalDeviationAlerts types.Int64  `tfsdk:"mcp_critical_deviation_alerts"`
+	MCPDeviationByTypeJSON     types.String `tfsdk:"mcp_deviation_by_type_json"`
+	ResponseJSON               types.String `tfsdk:"response_json"`
 }
 
 func NewGovernanceReportsOverviewDataSource() datasource.DataSource {
@@ -38,6 +41,18 @@ func (d *governanceReportsOverviewDataSource) Schema(_ context.Context, _ dataso
 			"days": schema.Int64Attribute{
 				Optional:    true,
 				Description: "Optional overview window in days.",
+			},
+			"mcp_deviation_alerts": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Total MCP deviation alerts in the reporting window.",
+			},
+			"mcp_critical_deviation_alerts": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Critical MCP deviation alerts in the reporting window.",
+			},
+			"mcp_deviation_by_type_json": schema.StringAttribute{
+				Computed:    true,
+				Description: "MCP deviation counts grouped by type as JSON array.",
 			},
 			"response_json": schema.StringAttribute{
 				Computed:    true,
@@ -73,6 +88,19 @@ func (d *governanceReportsOverviewDataSource) Read(ctx context.Context, req data
 		return
 	}
 
+	alerts, critical := extractOverviewMCPDeviationCounts(result)
+	state.MCPDeviationAlerts = types.Int64Value(alerts)
+	state.MCPCriticalDeviationAlerts = types.Int64Value(critical)
+	state.MCPDeviationByTypeJSON = types.StringValue(extractOverviewMCPDeviationByTypeJSON(result))
 	state.ResponseJSON = types.StringValue(tfhelpers.ToJSONString(result))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func extractOverviewMCPDeviationCounts(result map[string]any) (int64, int64) {
+	kpi := tfhelpers.GetMap(result, "kpi")
+	return tfhelpers.GetInt64(kpi, "mcp_deviation_alerts"), tfhelpers.GetInt64(kpi, "mcp_critical_deviation_alerts")
+}
+
+func extractOverviewMCPDeviationByTypeJSON(result map[string]any) string {
+	return tfhelpers.ToJSONArrayString(result["mcp_deviation_by_type"])
 }
