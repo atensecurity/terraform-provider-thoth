@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -30,6 +31,15 @@ type governanceSettingsModel struct {
 	TenantID                     types.String `tfsdk:"tenant_id"`
 	ComplianceProfile            types.String `tfsdk:"compliance_profile"`
 	RegulatoryRegimes            types.List   `tfsdk:"regulatory_regimes"`
+	DeclaredRegulatoryRegimes    types.Set    `tfsdk:"declared_regulatory_regimes"`
+	ComplianceEnforcementMode    types.String `tfsdk:"compliance_enforcement_mode"`
+	CanonicalRegimes             types.Set    `tfsdk:"canonical_regimes"`
+	ComplianceCoverage           types.Map    `tfsdk:"compliance_coverage"`
+	RegimesWithoutControls       types.Set    `tfsdk:"regimes_without_controls"`
+	ComplianceCatalogueSHA256    types.String `tfsdk:"compliance_catalogue_sha256"`
+	ComplianceEvaluatorSHA256    types.String `tfsdk:"compliance_evaluator_sha256"`
+	ComplianceRevision           types.Int64  `tfsdk:"compliance_revision"`
+	PropagationMaxMS             types.Int64  `tfsdk:"propagation_max_ms"`
 	ShadowLow                    types.String `tfsdk:"shadow_low"`
 	ShadowMedium                 types.String `tfsdk:"shadow_medium"`
 	ShadowHigh                   types.String `tfsdk:"shadow_high"`
@@ -66,7 +76,7 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"id":                                   schema.StringAttribute{Computed: true, Description: "Terraform resource identifier (tenant ID).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"tenant_id":                            schema.StringAttribute{Computed: true, Description: "Tenant ID resolved from provider configuration."},
 			"compliance_profile":                   schema.StringAttribute{Optional: true, Description: "Compliance profile (soc2, healthcare, financial, public_sector, privacy, ai_governance)."},
-			"regulatory_regimes":                   schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Explicit regulatory regimes for onboarding baseline auto-pack loading (for example: soc2, hipaa, gdpr, fedramp, sec_cftc). Defaults to SOC2 when unset."},
+			"regulatory_regimes":                   schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Explicit regulatory regimes for onboarding baseline auto-pack loading (for example: soc2, hipaa, gdpr, fedramp, sec_cftc). Legacy packs only; defaults to SOC2 when unset. Does not activate executable compliance."},
 			"shadow_low":                           schema.StringAttribute{Optional: true, Description: "Default action for low risk events."},
 			"shadow_medium":                        schema.StringAttribute{Optional: true, Description: "Default action for medium risk events."},
 			"shadow_high":                          schema.StringAttribute{Optional: true, Description: "Default action for high risk events."},
@@ -88,6 +98,9 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"updated_at":                           schema.StringAttribute{Computed: true, Description: "Last update timestamp returned by GovAPI."},
 		},
 	}
+	for key, attribute := range complianceAttributes() {
+		resp.Schema.Attributes[key] = attribute
+	}
 }
 
 func (r *governanceSettingsResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -106,7 +119,7 @@ func (r *governanceSettingsResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	next, ok := r.apply(ctx, plan, plan, &resp.Diagnostics)
+	next, ok := r.apply(ctx, plan, governanceSettingsModel{}, &resp.Diagnostics)
 	if !ok {
 		return
 	}
@@ -146,8 +159,22 @@ func (r *governanceSettingsResource) Update(ctx context.Context, req resource.Up
 	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
 }
 
-func (r *governanceSettingsResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
-	// No DELETE endpoint is exposed by GovAPI for tenant settings.
+func (r *governanceSettingsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state governanceSettingsModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() || state.DeclaredRegulatoryRegimes.IsNull() {
+		return
+	}
+	payload := map[string]any{}
+	plan := state
+	plan.DeclaredRegulatoryRegimes = types.SetNull(types.StringType)
+	plan.ComplianceEnforcementMode = types.StringNull()
+	if !r.applyComplianceMutation(ctx, payload, plan, state, &resp.Diagnostics) {
+		return
+	}
+	if _, err := r.client.UpdateTenantSettings(ctx, payload); err != nil {
+		resp.Diagnostics.AddError("Error clearing managed compliance declaration", err.Error())
+	}
 }
 
 func (r *governanceSettingsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -181,18 +208,21 @@ func (r *governanceSettingsResource) apply(
 	}
 
 	payload := cloneMap(existing)
+	stripComplianceFields(payload)
 	applyGovernanceSettingsPlan(&payload, plan, diags)
 	if diags.HasError() {
 		return governanceSettingsModel{}, false
 	}
 
+	if !r.applyComplianceMutation(ctx, payload, plan, prior, diags) {
+		return governanceSettingsModel{}, false
+	}
 	updated, err := r.client.UpdateTenantSettings(ctx, payload)
 	if err != nil {
 		diags.AddError("Error updating governance settings", err.Error())
 		return governanceSettingsModel{}, false
 	}
 
-	_ = prior
 	return flattenGovernanceSettings(updated, plan, r.tenantID), true
 }
 
@@ -275,6 +305,10 @@ func applyGovernanceSettingsPlan(payload *map[string]any, plan governanceSetting
 			diags.AddAttributeError(path.Root("extra_settings_json"), "Invalid JSON", err.Error())
 			return
 		}
+		if err := validateComplianceExtra(extra); err != nil {
+			diags.AddAttributeError(path.Root("extra_settings_json"), "Reserved compliance settings", err.Error())
+			return
+		}
 		deepMergeMap(p, extra)
 	}
 
@@ -317,6 +351,45 @@ func flattenGovernanceSettings(apiPayload map[string]any, current governanceSett
 		state.ModelRouterFailoverProviders = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(modelRouter, "failover_providers"))
 	}
 
+	// Optional fields omitted from configuration remain unmanaged. API defaults
+	// must not turn null Terraform configuration into an inconsistent apply result.
+	if current.ComplianceProfile.IsNull() {
+		state.ComplianceProfile = current.ComplianceProfile
+	}
+	if current.RegulatoryRegimes.IsNull() {
+		state.RegulatoryRegimes = current.RegulatoryRegimes
+	}
+	if current.ShadowLow.IsNull() {
+		state.ShadowLow = current.ShadowLow
+	}
+	if current.ShadowMedium.IsNull() {
+		state.ShadowMedium = current.ShadowMedium
+	}
+	if current.ShadowHigh.IsNull() {
+		state.ShadowHigh = current.ShadowHigh
+	}
+	if current.ShadowCritical.IsNull() {
+		state.ShadowCritical = current.ShadowCritical
+	}
+	if current.ToolRiskOverrides.IsNull() {
+		state.ToolRiskOverrides = current.ToolRiskOverrides
+	}
+	if current.SecretBrokerEnabled.IsNull() {
+		state.SecretBrokerEnabled = current.SecretBrokerEnabled
+	}
+	if current.SecretBrokerStrictEndpoint.IsNull() {
+		state.SecretBrokerStrictEndpoint = current.SecretBrokerStrictEndpoint
+	}
+	if current.SecretBrokerFailOnMissing.IsNull() {
+		state.SecretBrokerFailOnMissing = current.SecretBrokerFailOnMissing
+	}
+	if current.SecretBrokerAllowedHosts.IsNull() {
+		state.SecretBrokerAllowedHosts = current.SecretBrokerAllowedHosts
+	}
+	if current.SecretBrokerAuthBindingsJSON.IsNull() {
+		state.SecretBrokerAuthBindingsJSON = current.SecretBrokerAuthBindingsJSON
+	}
+	flattenComplianceSettings(apiPayload, &state)
 	state.UpdatedAt = stringValueFromMap(apiPayload, "updated_at")
 	return state
 }
@@ -329,5 +402,68 @@ func canonicalSecretBrokerProvider(raw string) string {
 		return "aws_secrets_manager"
 	default:
 		return strings.TrimSpace(raw)
+	}
+}
+
+// Router and broker provider fields are Optional+Computed and can change via the final
+// extra_settings_json merge. Preserve refreshed values only when every routing
+// input is unchanged. A configured unknown or changed input must leave computed
+// outputs unknown so apply may return the API's normalized result.
+func stabilizeGovernanceComputedPlan(plan *governanceSettingsModel, config, prior governanceSettingsModel) {
+	if config.ExtraSettingsJSON.IsUnknown() || !config.ExtraSettingsJSON.Equal(prior.ExtraSettingsJSON) {
+		return
+	}
+	var extra map[string]any
+	if !config.ExtraSettingsJSON.IsNull() {
+		var err error
+		extra, err = tfhelpers.ParseJSONObject(config.ExtraSettingsJSON.ValueString())
+		if err != nil {
+			return
+		}
+	}
+	// Even unchanged extra JSON can reassert values after refreshed remote drift.
+	// Leave sections managed through that escape hatch unknown on updates.
+	_, extraBroker := extra["secret_broker"]
+	_, extraRouter := extra["model_router"]
+	// GovAPI derives provider=custom when the broker is enabled without a provider.
+	// A change to enabled must therefore keep an omitted provider unknown too.
+	if !extraBroker && plan.SecretBrokerProvider.IsUnknown() &&
+		!config.SecretBrokerEnabled.IsUnknown() && config.SecretBrokerEnabled.Equal(prior.SecretBrokerEnabled) &&
+		!config.SecretBrokerProvider.IsUnknown() && (config.SecretBrokerProvider.IsNull() || config.SecretBrokerProvider.Equal(prior.SecretBrokerProvider)) {
+		plan.SecretBrokerProvider = prior.SecretBrokerProvider
+	}
+	if extraRouter {
+		return
+	}
+	inputs := []struct{ configured, previous attr.Value }{
+		{config.ModelRouterEnabled, prior.ModelRouterEnabled},
+		{config.ModelRouterDefaultProvider, prior.ModelRouterDefaultProvider},
+		{config.ModelRouterDefaultModel, prior.ModelRouterDefaultModel},
+		{config.ModelRouterAllowedProviders, prior.ModelRouterAllowedProviders},
+		{config.ModelRouterAllowedModels, prior.ModelRouterAllowedModels},
+		{config.ModelRouterFailoverProviders, prior.ModelRouterFailoverProviders},
+	}
+	for _, input := range inputs {
+		if input.configured.IsUnknown() || (!input.configured.IsNull() && !input.configured.Equal(input.previous)) {
+			return
+		}
+	}
+	if plan.ModelRouterEnabled.IsUnknown() {
+		plan.ModelRouterEnabled = prior.ModelRouterEnabled
+	}
+	if plan.ModelRouterDefaultProvider.IsUnknown() {
+		plan.ModelRouterDefaultProvider = prior.ModelRouterDefaultProvider
+	}
+	if plan.ModelRouterDefaultModel.IsUnknown() {
+		plan.ModelRouterDefaultModel = prior.ModelRouterDefaultModel
+	}
+	if plan.ModelRouterAllowedProviders.IsUnknown() {
+		plan.ModelRouterAllowedProviders = prior.ModelRouterAllowedProviders
+	}
+	if plan.ModelRouterAllowedModels.IsUnknown() {
+		plan.ModelRouterAllowedModels = prior.ModelRouterAllowedModels
+	}
+	if plan.ModelRouterFailoverProviders.IsUnknown() {
+		plan.ModelRouterFailoverProviders = prior.ModelRouterFailoverProviders
 	}
 }

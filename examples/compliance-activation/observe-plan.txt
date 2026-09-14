@@ -1,0 +1,80 @@
+
+Warning: Provider development overrides are in effect
+
+The following provider development overrides are set in the CLI
+configuration:
+ - atensecurity/thoth in <temporary-fixture-directory>/bin
+
+The behavior may therefore not match any released version of the provider and
+applying changes may cause the state to become incompatible with published
+releases.
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # thoth_governance_settings.assessment will be created
+  + resource "thoth_governance_settings" "assessment" {
+      + canonical_regimes               = [
+          + "CMMC L1",
+          + "FedRAMP",
+          + "ISO 27001",
+        ]
+      + compliance_catalogue_sha256     = "226b92ae9cbcb611c6d5c9b669c64a707c0c11d4a689217d8f19a006a671bf36"
+      + compliance_coverage             = {
+          + "CMMC L1" = {
+              + enforced        = 3
+              + evidence_gap    = 2
+              + not_action_time = 1
+              + total           = 6
+            },
+          + "FedRAMP" = {
+              + enforced        = 4
+              + evidence_gap    = 1
+              + not_action_time = 4
+              + total           = 9
+            },
+          + "ISO 27001" = {
+              + enforced        = 0
+              + evidence_gap    = 0
+              + not_action_time = 0
+              + total           = 0
+            },
+        }
+      + compliance_enforcement_mode     = "observe"
+      + compliance_evaluator_sha256     = "43ad4699e8916172f5a8da2eef65ca3142995925fd56c1589e85c71d28141962"
+      + compliance_revision             = (known after apply)
+      + declared_regulatory_regimes     = [
+          + "cmmc_l1",
+          + "fedramp",
+          + "iso_27001",
+        ]
+      + id                              = (known after apply)
+      + model_router_allowed_models     = (known after apply)
+      + model_router_allowed_providers  = (known after apply)
+      + model_router_default_model      = (known after apply)
+      + model_router_default_provider   = (known after apply)
+      + model_router_enabled            = (known after apply)
+      + model_router_failover_providers = (known after apply)
+      + propagation_max_ms              = 1000
+      + regimes_without_controls        = [
+          + "ISO 27001",
+        ]
+      + secret_broker_provider          = (known after apply)
+      + tenant_id                       = "fixture"
+      + updated_at                      = (known after apply)
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Warning: Declared regimes have no executable controls
+
+  with thoth_governance_settings.assessment,
+  on main.tf line 9, in resource "thoth_governance_settings" "assessment":
+   9: resource "thoth_governance_settings" "assessment" {
+
+See regimes_without_controls. These regimes contribute coverage gaps, not
+per-action restrictions. This catalogue makes no regulatory conformance
+claim.

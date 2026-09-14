@@ -1,0 +1,49 @@
+
+Warning: Provider development overrides are in effect
+
+The following provider development overrides are set in the CLI
+configuration:
+ - atensecurity/thoth in <temporary-fixture-directory>/bin
+
+The behavior may therefore not match any released version of the provider and
+applying changes may cause the state to become incompatible with published
+releases.
+thoth_governance_settings.assessment: Refreshing state... [id=fixture]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # thoth_governance_settings.assessment will be updated in-place
+  ~ resource "thoth_governance_settings" "assessment" {
+      ~ compliance_enforcement_mode     = "observe" -> "enforce"
+      ~ compliance_revision             = 1 -> (known after apply)
+        id                              = "fixture"
+      + updated_at                      = (known after apply)
+        # (14 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+Warning: Declared regimes have no executable controls
+
+  with thoth_governance_settings.assessment,
+  on main.tf line 9, in resource "thoth_governance_settings" "assessment":
+   9: resource "thoth_governance_settings" "assessment" {
+
+See regimes_without_controls. These regimes contribute coverage gaps, not
+per-action restrictions. This catalogue makes no regulatory conformance
+claim.
+
+Warning: Tenant-wide compliance enforcement
+
+  with thoth_governance_settings.assessment,
+  on main.tf line 9, in resource "thoth_governance_settings" "assessment":
+   9: resource "thoth_governance_settings" "assessment" {
+
+This plan enables non-grantable compliance restrictions for all current and
+future agents within 1000 ms. Evidence-based UNRESOLVED blocks; structural
+coverage gaps do not. Independent authorization restrictions remain in force
+in either mode.

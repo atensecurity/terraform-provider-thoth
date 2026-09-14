@@ -151,6 +151,7 @@ func (r *siemSettingsResource) apply(
 	}
 
 	payload := cloneMap(existing)
+	stripComplianceFields(payload)
 	applySIEMSettingsPlan(&payload, plan, prior)
 
 	updated, err := r.client.UpdateTenantSettings(ctx, payload)

@@ -7,24 +7,62 @@ description: |-
 
 # thoth_governance_settings
 
-Manages compliance profile, risk policy, secret broker controls, and model router policy.
+Manages tenant compliance declarations, risk policy, secret broker controls, and model routing.
 
-Use `compliance_profile` for a preset baseline and `regulatory_regimes` for explicit obligations.
-When `regulatory_regimes` is omitted, GovAPI falls back to profile defaults and then `soc2`.
+`compliance_profile` and `regulatory_regimes` select legacy onboarding packs. Their implicit
+SOC 2 default never activates executable compliance. Set `declared_regulatory_regimes` and
+an explicit `compliance_enforcement_mode` to govern every current and future tenant agent.
+This extends the existing settings resource while keeping legacy pack behavior separate.
 
 ## Example Usage
 
 ```terraform
-resource "thoth_governance_settings" "tenant_policy" {
-  compliance_profile = "soc2"
-  regulatory_regimes = ["soc2", "sec_cftc"]
-  shadow_low         = "allow"
-  shadow_medium      = "step_up"
-  shadow_high        = "block"
-  shadow_critical    = "block"
-
-  model_router_enabled          = true
-  model_router_default_provider = "openai"
-  model_router_default_model    = "gpt-4o-mini"
+resource "thoth_governance_settings" "assessment" {
+  declared_regulatory_regimes  = ["fedramp", "cmmc_l1", "iso_27001"]
+  compliance_enforcement_mode = "observe"
 }
+```
+
+Accepted names are `soc2`, `hipaa`, `gdpr`, `fedramp`, `sec_cftc`, `finra`, `cmmc_l1`,
+`iso_27001`, `iso_42001`, and `hitech`. Case, whitespace, `_`, `-`, and `/` separators
+are ignored; input spellings remain in Terraform state. HITECH and HIPAA are separate
+regimes. Unknown names and equivalent duplicates are plan-time errors.
+
+`compliance_coverage`, `canonical_regimes`, `regimes_without_controls`, and release hashes
+are known in the first plan when the declaration is known. Coverage is an author
+classification, not an assessor-approved mapping or a claim of regulatory conformance.
+ISO 27001, ISO 42001, and HITECH currently have no executable controls. Their coverage
+gaps remain visible in both modes and add no per-action restriction.
+
+Observe records advisory findings without relaxing or adding to independent authorization.
+Changing `compliance_enforcement_mode` to `enforce` adds non-grantable compliance
+restrictions for all tenant agents within 1000 ms. Evidence-based `UNRESOLVED` findings
+block in enforce mode; structural gaps do not. Review evidence gaps and observe findings
+before changing mode. An enforcement warning accompanies the plan diff.
+
+Apply first verifies that the running enforcer matches the provider's catalogue and
+evaluator identities and that atomic declaration history is supported. A mismatch or
+unavailable capability fails before any settings mutation. Reconcile provider and server
+versions and create a new plan before retrying.
+
+Omitting a declaration that was never managed preserves any external declaration.
+Removing a previously managed declaration (or setting `[]` and removing its mode) clears
+it using its prior revision. Removing mode while leaving regimes active is an error.
+Destroy clears only the managed declaration and mode, preserving legacy settings; a
+legacy-only resource destroy is a no-op. Stale revisions fail without overwriting a newer
+declaration. Import does not adopt an external compliance declaration automatically;
+add explicit declaration and mode configuration to take ownership.
+
+`extra_settings_json` cannot contain executable compliance fields, revision controls,
+identity hashes, or coverage fields. Use the typed attributes so the plan remains accurate.
+
+See `examples/compliance-activation/` for the full example and actual local fixture plan
+outputs, including the observe-to-enforce diff. The fixture never contacts a real tenant.
+
+{{ .SchemaMarkdown }}
+
+## Import
+
+```shell
+terraform import thoth_governance_settings.assessment tenant-id
 ```

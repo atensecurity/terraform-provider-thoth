@@ -1188,3 +1188,10 @@ func extractDataArray(payload map[string]any) ([]map[string]any, error) {
 	}
 	return items, nil
 }
+
+// GetComplianceCatalogue returns the running enforcement catalogue and declaration capability.
+func (c *Client) GetComplianceCatalogue(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("compliance/catalogue"), nil, nil, &out, true)
+	return out, err
+}

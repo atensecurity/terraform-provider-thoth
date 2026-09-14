@@ -155,6 +155,7 @@ func (r *pamSettingsResource) apply(
 	}
 
 	payload := cloneMap(existing)
+	stripComplianceFields(payload)
 	applyPAMSettingsPlan(&payload, plan, prior)
 
 	updated, err := r.client.UpdateTenantSettings(ctx, payload)

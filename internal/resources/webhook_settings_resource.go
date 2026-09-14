@@ -149,6 +149,7 @@ func (r *webhookSettingsResource) apply(
 	}
 
 	payload := cloneMap(existing)
+	stripComplianceFields(payload)
 	applyWebhookSettingsPlan(&payload, plan, prior)
 
 	updated, err := r.client.UpdateTenantSettings(ctx, payload)
