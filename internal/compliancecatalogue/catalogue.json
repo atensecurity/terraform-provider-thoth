@@ -1,0 +1,432 @@
+{
+  "catalogue_sha256": "226b92ae9cbcb611c6d5c9b669c64a707c0c11d4a689217d8f19a006a671bf36",
+  "controls": [
+    {
+      "classification": "enforced",
+      "id": "164.312(a)(1)",
+      "name": "Access Control",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "enforced",
+      "id": "164.312(a)(2)(i)",
+      "name": "Unique User Identification",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "enforced",
+      "id": "164.312(d)",
+      "name": "Person or Entity Authentication",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "enforced",
+      "id": "164.312(e)(1)",
+      "name": "Transmission Security",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "164.312(a)(2)(iv)",
+      "name": "Encryption and Decryption",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "164.312(c)(1)",
+      "name": "Integrity",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "164.312(c)(2)",
+      "name": "Mechanism to Authenticate PHI",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "164.312(e)(2)(ii)",
+      "name": "Encryption in Transit",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "164.312(a)(2)(ii)",
+      "name": "Emergency Access Procedure",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "164.312(a)(2)(iii)",
+      "name": "Automatic Logoff",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "164.312(b)",
+      "name": "Audit Controls",
+      "regulation": "HIPAA"
+    },
+    {
+      "classification": "enforced",
+      "id": "Art.32",
+      "name": "Security of Processing",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "Art.5(1)(b)",
+      "name": "Purpose Limitation",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "Art.22",
+      "name": "Automated Decision-Making",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "Art.5(1)(c)",
+      "name": "Data Minimisation",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "Art.5(2)",
+      "name": "Accountability",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "Art.30",
+      "name": "Records of Processing Activities",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "Art.83",
+      "name": "Administrative Fines — Evidence",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "EU-AI-Act-Art.12",
+      "name": "Transparency and Record-Keeping",
+      "regulation": "GDPR"
+    },
+    {
+      "classification": "enforced",
+      "id": "CC6.1",
+      "name": "Logical Access Controls",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "enforced",
+      "id": "CC6.2",
+      "name": "Logical Access — New Access Provisioning",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "enforced",
+      "id": "CC8.1",
+      "name": "Change Management",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "CC6.3",
+      "name": "Logical Access — Removal",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "CC7.2",
+      "name": "System Monitoring",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "CC9.1",
+      "name": "Risk Mitigation",
+      "regulation": "SOC 2"
+    },
+    {
+      "classification": "enforced",
+      "id": "AC.L1-3.1.1",
+      "name": "Limit System Access to Authorized Users",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "enforced",
+      "id": "AC.L1-3.1.2",
+      "name": "Limit Access to Permitted Transactions",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "enforced",
+      "id": "IA.L1-3.5.2",
+      "name": "Authenticate Identities",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "AC.L1-3.1.20",
+      "name": "Verify and Control External Connections",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "AC.L1-3.1.22",
+      "name": "Control Information on Public Systems",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "L1-physical-media-maintenance",
+      "name": "Remaining Level 1 practices (9)",
+      "regulation": "CMMC L1"
+    },
+    {
+      "classification": "enforced",
+      "id": "AC-3",
+      "name": "Access Enforcement",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "enforced",
+      "id": "AC-6",
+      "name": "Least Privilege",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "enforced",
+      "id": "IA-2",
+      "name": "Identification and Authentication",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "enforced",
+      "id": "CM-3",
+      "name": "Configuration Change Control",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "AU-9",
+      "name": "Protection of Audit Information",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "AC-2",
+      "name": "Account Management",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "AU-2",
+      "name": "Event Logging",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "CM-7",
+      "name": "Least Functionality",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "SI-4",
+      "name": "System Monitoring",
+      "regulation": "FedRAMP"
+    },
+    {
+      "classification": "enforced",
+      "id": "MNPI-Control",
+      "name": "Material Non-Public Information Walls",
+      "regulation": "FINRA"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "SEC-17a-4",
+      "name": "Electronic Records Retention",
+      "regulation": "FINRA"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "FINRA-3110",
+      "name": "Supervision",
+      "regulation": "FINRA"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "FINRA-4370",
+      "name": "Business Continuity",
+      "regulation": "FINRA"
+    },
+    {
+      "classification": "enforced",
+      "id": "SEC-Reg-SP-Safeguards",
+      "name": "Customer Information Safeguards",
+      "regulation": "SEC/CFTC"
+    },
+    {
+      "classification": "enforced",
+      "id": "CFTC-160-Privacy",
+      "name": "Privacy of Consumer Financial Information",
+      "regulation": "SEC/CFTC"
+    },
+    {
+      "classification": "evidence_gap",
+      "id": "Books-and-Records",
+      "name": "Supervisory Evidence and Records Integrity",
+      "regulation": "SEC/CFTC"
+    },
+    {
+      "classification": "not_action_time",
+      "id": "CFTC-1.11-Risk-Control",
+      "name": "Risk Management Program",
+      "regulation": "SEC/CFTC"
+    }
+  ],
+  "evaluator_sha256": "43ad4699e8916172f5a8da2eef65ca3142995925fd56c1589e85c71d28141962",
+  "regimes": [
+    {
+      "canonical": "SOC 2",
+      "counts": {
+        "enforced": 3,
+        "evidence_gap": 0,
+        "not_action_time": 3,
+        "total": 6
+      },
+      "normalized_aliases": [
+        "soc2",
+        "soc2type2"
+      ],
+      "slug": "soc2"
+    },
+    {
+      "canonical": "HIPAA",
+      "counts": {
+        "enforced": 4,
+        "evidence_gap": 4,
+        "not_action_time": 3,
+        "total": 11
+      },
+      "normalized_aliases": [
+        "hipaa"
+      ],
+      "slug": "hipaa"
+    },
+    {
+      "canonical": "GDPR",
+      "counts": {
+        "enforced": 1,
+        "evidence_gap": 2,
+        "not_action_time": 5,
+        "total": 8
+      },
+      "normalized_aliases": [
+        "gdpr"
+      ],
+      "slug": "gdpr"
+    },
+    {
+      "canonical": "FedRAMP",
+      "counts": {
+        "enforced": 4,
+        "evidence_gap": 1,
+        "not_action_time": 4,
+        "total": 9
+      },
+      "normalized_aliases": [
+        "fedramp",
+        "fedrampmoderate"
+      ],
+      "slug": "fedramp"
+    },
+    {
+      "canonical": "SEC/CFTC",
+      "counts": {
+        "enforced": 2,
+        "evidence_gap": 1,
+        "not_action_time": 1,
+        "total": 4
+      },
+      "normalized_aliases": [
+        "cftc",
+        "sec",
+        "seccftc"
+      ],
+      "slug": "sec_cftc"
+    },
+    {
+      "canonical": "FINRA",
+      "counts": {
+        "enforced": 1,
+        "evidence_gap": 1,
+        "not_action_time": 2,
+        "total": 4
+      },
+      "normalized_aliases": [
+        "finra"
+      ],
+      "slug": "finra"
+    },
+    {
+      "canonical": "CMMC L1",
+      "counts": {
+        "enforced": 3,
+        "evidence_gap": 2,
+        "not_action_time": 1,
+        "total": 6
+      },
+      "normalized_aliases": [
+        "cmmcl1"
+      ],
+      "slug": "cmmc_l1"
+    },
+    {
+      "canonical": "HITECH",
+      "counts": {
+        "enforced": 0,
+        "evidence_gap": 0,
+        "not_action_time": 0,
+        "total": 0
+      },
+      "normalized_aliases": [
+        "hitech",
+        "hitech2009"
+      ],
+      "slug": "hitech"
+    },
+    {
+      "canonical": "ISO 27001",
+      "counts": {
+        "enforced": 0,
+        "evidence_gap": 0,
+        "not_action_time": 0,
+        "total": 0
+      },
+      "normalized_aliases": [
+        "iso27001"
+      ],
+      "slug": "iso_27001"
+    },
+    {
+      "canonical": "ISO 42001",
+      "counts": {
+        "enforced": 0,
+        "evidence_gap": 0,
+        "not_action_time": 0,
+        "total": 0
+      },
+      "normalized_aliases": [
+        "iso42001"
+      ],
+      "slug": "iso_42001"
+    }
+  ],
+  "schema_version": 1
+}
