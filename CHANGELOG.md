@@ -2,6 +2,58 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.16 - 2026-09-18
+
+### Added
+
+- `thoth_governance_settings` gains an executable compliance declaration:
+  `declared_regulatory_regimes` and `compliance_enforcement_mode`, with computed
+  `canonical_regimes`, `compliance_coverage`, `compliance_revision` and
+  `propagation_max_ms`. A declaration governs all current and future tenant
+  agents, including agents with no policy record. `observe` records advisory
+  findings and preserves independent authorization; `enforce` adds
+  non-grantable restrictions for DENY, STEP_UP and evidence-based UNRESOLVED.
+  Removing a managed declaration or setting `[]` clears it, and legacy profile
+  defaults never activate the binding.
+- Per-regime coverage counts are known at plan time from a catalogue pinned into
+  the provider, so `terraform plan` previews which controls a declared regime
+  would evaluate before any apply. These are Aten's own author classifications
+  and are not a regulatory conformance assessment.
+- `thoth_mcp_vendor` gains manifest signature attributes
+  (`manifest_signature_status`, `_signer`, `_bundle_ref`, `_verified_at`),
+  plus `capabilities`, `runtime_identity`, `egress_policy_mode` and
+  `egress_allowed_host_patterns`.
+- `thoth_governance_settings` gains `regulatory_regimes` for onboarding baseline
+  auto-pack loading. This selects legacy packs only and does not activate
+  executable compliance; the declaration fields above are separate.
+
+### Changed
+
+- The governance executive summary and reports overview data sources return
+  additional fields.
+
+### Security
+
+- Updated indirect dependencies, including `golang.org/x/text` 0.37.0 to 0.41.0,
+  `golang.org/x/net` 0.55.0 to 0.58.0 and `golang.org/x/crypto` 0.52.0 to 0.55.0.
+
+### Upgrade note
+
+Applying a compliance declaration requires a running enforcer that reports the
+same catalogue and evaluator identity this provider pins **and** reports
+`transactional_declarations_supported`. If it does not, the apply fails with
+`Compliance capability mismatch` and changes nothing rather than writing a
+declaration the service cannot honour.
+
+A service with tenant declarations disabled will therefore refuse these fields
+by design. Every other resource and data source in this release is unaffected.
+Verify the three-way agreement before rollout with:
+
+```
+python3 scripts/reliability/compliance_release_preflight.py \
+  --base-url https://grid.<tenant>.<apex> --tenant-id <tenant>
+```
+
 ## 0.1.15 - 2026-07-23
 
 ### Fixed
