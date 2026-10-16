@@ -2,6 +2,29 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.17 - 2026-10-16
+
+### Added
+
+- `thoth_tool_classification` declares the reviewed effects of one exact tool
+  name (`read`, `write`, `delete`, `execute`, `export`, `external_call`,
+  `bulk_operation`, `credential_access`, `sensitive_data_access`). The enforcer
+  classifies calls to that tool from the declaration; request bodies cannot set
+  classes, and exact-action declarations still take precedence. Wildcards are
+  refused. Changes require a tenant admin, or an approver when the tenant has no
+  admin, and govern decisions within 5 seconds.
+
+### Security
+
+- Updated indirect dependencies, including `golang.org/x/net` 0.58.0 to 0.60.0,
+  `golang.org/x/crypto` 0.55.0 to 0.57.0 and `golang.org/x/mod` 0.38.0 to 0.41.0.
+
+### Upgrade note
+
+`thoth_tool_classification` needs a Thoth service that serves
+`/:tenant-id/thoth/tool-classifications`. Against an older service, applying the
+resource fails. Every other resource and data source is unchanged.
+
 ## 0.1.16 - 2026-09-18
 
 ### Added

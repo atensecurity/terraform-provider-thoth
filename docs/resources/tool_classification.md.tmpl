@@ -1,0 +1,31 @@
+---
+page_title: "thoth_tool_classification Resource"
+subcategory: "Governance"
+description: |-
+  Declares the reviewed effects of one tool for the tenant.
+---
+
+# thoth_tool_classification
+
+Manages `/:tenant-id/thoth/tool-classifications`. Each resource declares the
+effects of one exact tool name, such as `read` or `delete`. The enforcer
+classifies calls to that tool from this declaration; request bodies cannot set
+classes. An exact-action declaration still takes precedence.
+
+Changes require a tenant admin, or an approver when the tenant has no admin, with
+recent MFA. A control-plane API key needs the `write` permission. A change governs
+decisions within 5 seconds of the write.
+
+## Example Usage
+
+```terraform
+resource "thoth_tool_classification" "read_orders" {
+  tool_name = "orders.list"
+  classes   = ["read"]
+}
+
+resource "thoth_tool_classification" "delete_order" {
+  tool_name = "orders.delete"
+  classes   = ["delete"]
+}
+```
