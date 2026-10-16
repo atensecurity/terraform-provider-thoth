@@ -1195,3 +1195,14 @@ func (c *Client) GetComplianceCatalogue(ctx context.Context) (map[string]any, er
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("compliance/catalogue"), nil, nil, &out, true)
 	return out, err
 }
+
+// ToolClassification accesses the authenticated tenant's declaration registry.
+func (c *Client) ToolClassification(ctx context.Context, method, id string, payload map[string]any) (map[string]any, error) {
+	path := c.tenantPath("tool-classifications")
+	if id != "" {
+		path += "/" + url.PathEscape(id)
+	}
+	var out map[string]any
+	err := c.doJSON(ctx, method, path, nil, payload, &out, true)
+	return out, err
+}

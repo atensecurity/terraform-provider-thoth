@@ -327,6 +327,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewBrowserPolicyResource,
 		resources.NewBrowserEnrollmentResource,
 		resources.NewMCPVendorResource,
+		resources.NewToolClassificationResource,
 		resources.NewMCPCatalogVerifyResource,
 		resources.NewFleetAPIKeyResource,
 		resources.NewEndpointAPIKeyResource,
