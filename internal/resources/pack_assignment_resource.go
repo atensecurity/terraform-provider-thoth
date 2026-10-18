@@ -28,23 +28,25 @@ type packAssignmentResource struct {
 }
 
 type packAssignmentModel struct {
-	ID                types.String  `tfsdk:"id"`
-	TenantID          types.String  `tfsdk:"tenant_id"`
-	AgentID           types.String  `tfsdk:"agent_id"`
-	PackID            types.String  `tfsdk:"pack_id"`
-	ApprovalPolicyID  types.String  `tfsdk:"approval_policy_id"`
-	Environment       types.String  `tfsdk:"environment"`
-	OverridesJSON     types.String  `tfsdk:"overrides_json"`
-	MismatchBoost     types.Float64 `tfsdk:"mismatch_boost"`
-	DelegationBoost   types.Float64 `tfsdk:"delegation_boost"`
-	TrustFloor        types.Float64 `tfsdk:"trust_floor"`
-	CriticalThreshold types.Float64 `tfsdk:"critical_threshold"`
-	Status            types.String  `tfsdk:"status"`
-	Regulation        types.String  `tfsdk:"regulation"`
-	RuleVersion       types.Int64   `tfsdk:"rule_version"`
-	AppliedBy         types.String  `tfsdk:"applied_by"`
-	AppliedAt         types.String  `tfsdk:"applied_at"`
-	RevokedAt         types.String  `tfsdk:"revoked_at"`
+	ProfileVersion        types.String  `tfsdk:"profile_version"`
+	ProfileParametersJSON types.String  `tfsdk:"profile_parameters_json"`
+	ID                    types.String  `tfsdk:"id"`
+	TenantID              types.String  `tfsdk:"tenant_id"`
+	AgentID               types.String  `tfsdk:"agent_id"`
+	PackID                types.String  `tfsdk:"pack_id"`
+	ApprovalPolicyID      types.String  `tfsdk:"approval_policy_id"`
+	Environment           types.String  `tfsdk:"environment"`
+	OverridesJSON         types.String  `tfsdk:"overrides_json"`
+	MismatchBoost         types.Float64 `tfsdk:"mismatch_boost"`
+	DelegationBoost       types.Float64 `tfsdk:"delegation_boost"`
+	TrustFloor            types.Float64 `tfsdk:"trust_floor"`
+	CriticalThreshold     types.Float64 `tfsdk:"critical_threshold"`
+	Status                types.String  `tfsdk:"status"`
+	Regulation            types.String  `tfsdk:"regulation"`
+	RuleVersion           types.Int64   `tfsdk:"rule_version"`
+	AppliedBy             types.String  `tfsdk:"applied_by"`
+	AppliedAt             types.String  `tfsdk:"applied_at"`
+	RevokedAt             types.String  `tfsdk:"revoked_at"`
 }
 
 func NewPackAssignmentResource() resource.Resource {
@@ -59,11 +61,13 @@ func (r *packAssignmentResource) Schema(_ context.Context, _ resource.SchemaRequ
 	resp.Schema = schema.Schema{
 		Description: "Applies a compliance pack to a specific agent and tracks assignment state.",
 		Attributes: map[string]schema.Attribute{
-			"id":                 schema.StringAttribute{Computed: true, Description: "Resource ID (agent_id/pack_id).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
-			"tenant_id":          schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
-			"agent_id":           schema.StringAttribute{Required: true, Description: "Target agent ID.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"pack_id":            schema.StringAttribute{Required: true, Description: "Compliance pack identifier.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
-			"approval_policy_id": schema.StringAttribute{Optional: true, Description: "Approval policy ID for pack application."},
+			"id":                      schema.StringAttribute{Computed: true, Description: "Resource ID (agent_id/pack_id).", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+			"tenant_id":               schema.StringAttribute{Computed: true, Description: "Tenant ID from provider configuration."},
+			"agent_id":                schema.StringAttribute{Required: true, Description: "Target agent ID.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"pack_id":                 schema.StringAttribute{Required: true, Description: "Compliance pack or governance profile identifier.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+			"profile_version":         schema.StringAttribute{Optional: true, Computed: true, Description: "Pinned profile version. Updating it explicitly approves the version change."},
+			"profile_parameters_json": schema.StringAttribute{Optional: true, Description: "Paid profile parameters: payment/refund approval amount USD and approved remote hosts."},
+			"approval_policy_id":      schema.StringAttribute{Optional: true, Description: "Approval policy ID for pack application."},
 			"environment": schema.StringAttribute{
 				Optional:    true,
 				Description: "Environment: dev or prod.",
@@ -190,6 +194,18 @@ func (r *packAssignmentResource) apply(ctx context.Context, plan packAssignmentM
 	}
 
 	payload := map[string]any{"pack_id": packID}
+	if !plan.ProfileVersion.IsNull() && !plan.ProfileVersion.IsUnknown() {
+		payload["profile_version"] = plan.ProfileVersion.ValueString()
+		payload["approve_update"] = true
+	}
+	if !plan.ProfileParametersJSON.IsNull() && !plan.ProfileParametersJSON.IsUnknown() {
+		values, err := tfhelpers.ParseJSONObject(plan.ProfileParametersJSON.ValueString())
+		if err != nil {
+			diags.AddError("Invalid profile parameters", err.Error())
+			return packAssignmentModel{}, false
+		}
+		payload["profile_parameters"] = values
+	}
 	if !plan.ApprovalPolicyID.IsNull() && !plan.ApprovalPolicyID.IsUnknown() {
 		payload["approval_policy_id"] = plan.ApprovalPolicyID.ValueString()
 	}
@@ -252,6 +268,11 @@ func (r *packAssignmentResource) findAgentPack(ctx context.Context, agentID, pac
 func flattenPackAssignment(row map[string]any, current packAssignmentModel, tenantID string) packAssignmentModel {
 	next := current
 	next.TenantID = types.StringValue(tenantID)
+	if version := tfhelpers.GetString(row, "profile_version"); version != "" {
+		next.ProfileVersion = types.StringValue(version)
+	} else {
+		next.ProfileVersion = types.StringNull()
+	}
 	next.Status = nullableString(row, "status")
 	next.Regulation = nullableString(row, "regulation")
 	next.RuleVersion = types.Int64Value(tfhelpers.GetInt64(row, "rule_version"))
