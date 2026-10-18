@@ -32,6 +32,10 @@ resource "thoth_tool_classification" "delete_order" {
 - `classes` (Set of String) Reviewed effects: read, write, delete, execute, export, external_call, bulk_operation, credential_access, sensitive_data_access.
 - `tool_name` (String) Exact tool name; wildcards are refused.
 
+### Optional
+
+- `agent_id` (String) Agent scope. Omit for tenant-wide declarations. Changing scope replaces the declaration; agent classes cannot erase tenant-wide risky effects.
+
 ### Read-Only
 
 - `created_at` (String)

@@ -12,6 +12,10 @@ effects of one exact tool name, such as `read` or `delete`. The enforcer
 classifies calls to that tool from this declaration; request bodies cannot set
 classes. An exact-action declaration still takes precedence.
 
+Optional `agent_id` limits a declaration to one agent. Tenant-wide effects still
+apply: agent declarations add classes and cannot erase tenant-level risk classes.
+Changing `agent_id` replaces the declaration.
+
 Changes require a tenant admin, or an approver when the tenant has no admin, with
 recent MFA. A control-plane API key needs the `write` permission. A change governs
 decisions within 5 seconds of the write.

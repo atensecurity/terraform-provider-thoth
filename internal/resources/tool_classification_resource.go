@@ -18,6 +18,7 @@ type toolClassificationResource struct{ client *client.Client }
 type toolClassificationModel struct {
 	ID        types.String `tfsdk:"id"`
 	ToolName  types.String `tfsdk:"tool_name"`
+	AgentID   types.String `tfsdk:"agent_id"`
 	Classes   types.Set    `tfsdk:"classes"`
 	CreatedBy types.String `tfsdk:"created_by"`
 	CreatedAt types.String `tfsdk:"created_at"`
@@ -31,6 +32,7 @@ func (r *toolClassificationResource) Schema(_ context.Context, _ resource.Schema
 	resp.Schema = schema.Schema{Description: "Declare reviewed tool effects. Requires tenant admin authentication, or an approver when no admin exists.", Attributes: map[string]schema.Attribute{
 		"id":         schema.StringAttribute{Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 		"tool_name":  schema.StringAttribute{Required: true, Description: "Exact tool name; wildcards are refused."},
+		"agent_id":   schema.StringAttribute{Optional: true, Description: "Optional agent scope; omit for tenant-wide authority. Changing scope replaces the declaration.", PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
 		"classes":    schema.SetAttribute{Required: true, ElementType: types.StringType, Description: "Reviewed effects: read, write, delete, execute, export, external_call, bulk_operation, credential_access, sensitive_data_access."},
 		"created_by": schema.StringAttribute{Computed: true}, "created_at": schema.StringAttribute{Computed: true},
 	}}
@@ -50,7 +52,11 @@ func (r *toolClassificationResource) write(ctx context.Context, model *toolClass
 	if method == http.MethodPost {
 		id = ""
 	}
-	row, err := r.client.ToolClassification(ctx, method, id, map[string]any{"tool_name": model.ToolName.ValueString(), "classes": classes})
+	body := map[string]any{"tool_name": model.ToolName.ValueString(), "classes": classes}
+	if !model.AgentID.IsNull() && !model.AgentID.IsUnknown() {
+		body["agent_id"] = model.AgentID.ValueString()
+	}
+	row, err := r.client.ToolClassification(ctx, method, id, body)
 	if err != nil {
 		return err
 	}
@@ -59,6 +65,10 @@ func (r *toolClassificationResource) write(ctx context.Context, model *toolClass
 func (r *toolClassificationResource) flatten(ctx context.Context, model *toolClassificationModel, row map[string]any) error {
 	model.ID = types.StringValue(tfhelpers.GetString(row, "id"))
 	model.ToolName = types.StringValue(tfhelpers.GetString(row, "tool_name"))
+	model.AgentID = types.StringNull()
+	if agent := tfhelpers.GetString(row, "agent_id"); agent != "" {
+		model.AgentID = types.StringValue(agent)
+	}
 	classes, diags := types.SetValueFrom(ctx, types.StringType, tfhelpers.GetStringSlice(row, "classes"))
 	if diags.HasError() {
 		return fmt.Errorf("invalid server classes")
