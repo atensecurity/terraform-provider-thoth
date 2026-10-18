@@ -18,7 +18,7 @@ Applies a compliance pack to a specific agent and tracks assignment state.
 ### Required
 
 - `agent_id` (String) Target agent ID.
-- `pack_id` (String) Compliance pack identifier.
+- `pack_id` (String) Compliance pack or governance profile identifier.
 
 ### Optional
 
@@ -28,6 +28,8 @@ Applies a compliance pack to a specific agent and tracks assignment state.
 - `environment` (String) Environment: dev or prod.
 - `mismatch_boost` (Number) Deterministic boost for purpose/sensitivity mismatch signals (0-100).
 - `overrides_json` (String) Pack override JSON object.
+- `profile_parameters_json` (String) Paid profile parameters: payment/refund approval amount USD and approved remote hosts.
+- `profile_version` (String) Pinned profile version. Updating it explicitly approves the version change.
 - `trust_floor` (Number) Ignore low-confidence purpose/delegation signals below this floor (0-1).
 
 ### Read-Only

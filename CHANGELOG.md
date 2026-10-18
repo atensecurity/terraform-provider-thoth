@@ -2,6 +2,29 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.18 - 2026-10-18
+
+### Added
+
+- `thoth_pack_assignment` accepts the governance profiles `safe-default`,
+  `coding-agent`, `finance-operations` and `customer-support` as `pack_id`.
+  A profile gives an agent a starter policy built on confirmed tool classes
+  and named rules, without writing rules.
+- `profile_version` pins the profile version. While it is set, the provider
+  approves profile changes made through this resource, including a new
+  `profile_version`; Terraform review is the approval step.
+- `profile_parameters_json` sets the paid-plan profile parameters:
+  `payment_approval_amount_usd` (default 10000), `refund_approval_amount_usd`
+  (default 5000) and `approved_remote_hosts` (exact host names, default none).
+
+### Upgrade note
+
+Profiles need a Thoth service with agent profiles. Trial tenants can choose one
+profile and cannot set parameters; paid-only features return "available on paid
+plans". Removing a profile assignment returns the agent to `safe-default`, and
+`safe-default` itself cannot be removed. Compliance pack assignments are
+unchanged.
+
 ## 0.1.17 - 2026-10-16
 
 ### Added
