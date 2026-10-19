@@ -2,6 +2,22 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## 0.1.19 - 2026-10-19
+
+### Added
+
+- `thoth_tool_classification` accepts an optional `agent_id` to scope a tool
+  declaration to one agent. Omitting it keeps tenant-wide authority; changing
+  the scope replaces the declaration.
+
+### Fixed
+
+- Webhook, SIEM and PAM resources preserve the configured secret in Terraform
+  state when the service returns `[redacted credential]`, preventing permanent
+  drift and repeated secret writes. Imports leave redacted secrets unset;
+  configure a replacement credential explicitly when managing an imported
+  resource.
+
 ## 0.1.18 - 2026-10-18
 
 ### Added
