@@ -11,6 +11,14 @@ import (
 	"github.com/atensecurity/terraform-provider-thoth/internal/tfhelpers"
 )
 
+// Govapi returns this marker for nonempty write-only settings credentials.
+// Preserve configured state; imports cannot recover a credential from reads.
+const settingsSecretRedacted = "[redacted credential]"
+
+func readableSettingsSecret(value string) bool {
+	return value != "" && value != settingsSecretRedacted
+}
+
 func cloneMap(in map[string]any) map[string]any {
 	b, err := json.Marshal(in)
 	if err != nil {

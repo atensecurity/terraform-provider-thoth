@@ -30,3 +30,5 @@ Manages tenant PAM step-up integration settings.
 - `id` (String) Terraform resource identifier (tenant ID).
 - `tenant_id` (String) Tenant ID resolved from provider configuration.
 - `updated_at` (String) Last update timestamp returned by GovAPI.
+
+Secrets are write-only at the API: reads return `[redacted credential]` for stored values. The provider preserves configured secret state on redacted reads. Imports cannot recover secrets; configure sensitive values to manage or rotate them. Terraform state still contains configured secrets and must be stored securely.

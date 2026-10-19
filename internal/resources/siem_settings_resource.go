@@ -187,7 +187,7 @@ func flattenSIEMSettings(apiPayload map[string]any, current siemSettingsModel, t
 	siemWebhook := tfhelpers.GetMap(siem, "webhook")
 	state.SIEMWebhookEnabled = types.BoolValue(tfhelpers.GetBool(siemWebhook, "enabled"))
 	state.SIEMWebhookURL = stringValueFromMap(siemWebhook, "url")
-	if v := tfhelpers.GetString(siemWebhook, "secret"); v != "" {
+	if v := tfhelpers.GetString(siemWebhook, "secret"); readableSettingsSecret(v) {
 		state.SIEMWebhookSecret = types.StringValue(v)
 	}
 	state.SIEMWebhookProvider = stringValueFromMap(siemWebhook, "provider")

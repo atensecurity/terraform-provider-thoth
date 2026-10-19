@@ -191,14 +191,14 @@ func flattenPAMSettings(apiPayload map[string]any, current pamSettingsModel, ten
 	pam := tfhelpers.GetMap(apiPayload, "pam")
 	state.PAMEnabled = types.BoolValue(tfhelpers.GetBool(pam, "enabled"))
 	state.PAMProvider = stringValueFromMap(pam, "provider")
-	if v := tfhelpers.GetString(pam, "callback_secret"); v != "" {
+	if v := tfhelpers.GetString(pam, "callback_secret"); readableSettingsSecret(v) {
 		state.PAMCallbackSecret = types.StringValue(v)
 	}
 	state.PAMRequestURL = stringValueFromMap(pam, "request_url")
-	if v := tfhelpers.GetString(pam, "request_secret"); v != "" {
+	if v := tfhelpers.GetString(pam, "request_secret"); readableSettingsSecret(v) {
 		state.PAMRequestSecret = types.StringValue(v)
 	}
-	if v := tfhelpers.GetString(pam, "request_auth_token"); v != "" {
+	if v := tfhelpers.GetString(pam, "request_auth_token"); readableSettingsSecret(v) {
 		state.PAMRequestAuthToken = types.StringValue(v)
 	}
 	if _, ok := pam["request_timeout_seconds"]; ok {

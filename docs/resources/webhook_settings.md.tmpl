@@ -9,6 +9,8 @@ description: |-
 
 Manages outbound webhook enablement, destination URL, and signing secret.
 
+Secrets are write-only at the API: reads return `[redacted credential]` for stored values. The provider preserves configured secret state on redacted reads. Imports cannot recover secrets; supply them through sensitive configuration if you intend to manage or rotate them. Terraform state still contains configured secrets and must be stored securely.
+
 ## Example Usage
 
 ```terraform

@@ -188,7 +188,7 @@ func flattenWebhookSettings(apiPayload map[string]any, current webhookSettingsMo
 	webhook := tfhelpers.GetMap(apiPayload, "webhook")
 	state.WebhookEnabled = types.BoolValue(tfhelpers.GetBool(webhook, "enabled"))
 	state.WebhookURL = stringValueFromMap(webhook, "url")
-	if v := tfhelpers.GetString(webhook, "secret"); v != "" {
+	if v := tfhelpers.GetString(webhook, "secret"); readableSettingsSecret(v) {
 		state.WebhookSecret = types.StringValue(v)
 	}
 	state.UpdatedAt = stringValueFromMap(apiPayload, "updated_at")
