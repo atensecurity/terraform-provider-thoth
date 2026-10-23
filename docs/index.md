@@ -97,9 +97,11 @@ provider "thoth" {
 
 ## Endpoint Derivation
 
-When `api_base_url` is not set, the provider derives it as:
+When `api_base_url` is not set:
 
-`https://grid.<tenant_id>.<apex_domain>`
+- a trial or self-serve workspace (its `tenant_id` is the 32-character workspace ID on the
+  dashboard's Setup page) uses `https://api.atensecurity.com`;
+- a dedicated (Enterprise) tenant derives `https://grid.<tenant_id>.<apex_domain>`.
 
 By default, `apex_domain` is `atensecurity.com`.
 
@@ -115,7 +117,7 @@ By default, `apex_domain` is `atensecurity.com`.
 - `org_api_key` (String, Sensitive) Organization-scoped API key used for non-interactive CI/CD control-plane operations.
 - `org_api_key_file` (String) Path to a file containing the organization-scoped API key.
 - `apex_domain` (String) Apex domain used to derive GovAPI host when api_base_url is omitted. Defaults to atensecurity.com.
-- `api_base_url` (String) GovAPI base URL override. When omitted, provider derives https://grid.<tenant_id>.<apex_domain>.
+- `api_base_url` (String) GovAPI base URL override. When omitted, a trial or self-serve workspace (a 32-character workspace ID) uses https://api.atensecurity.com and a dedicated tenant derives https://grid.<tenant_id>.<apex_domain>.
 - `insecure_skip_tls_verify` (Boolean) Skip TLS certificate verification (development/testing only).
 - `request_timeout_seconds` (Number) Per-request timeout in seconds.
 - `retry_base_delay_ms` (Number) Base delay in milliseconds for exponential retry backoff.

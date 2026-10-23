@@ -95,8 +95,10 @@ provider "thoth" {
 
 ## Endpoint Derivation
 
-When `api_base_url` is not set, the provider derives it as:
+When `api_base_url` is not set:
 
-`https://grid.<tenant_id>.<apex_domain>`
+- a trial or self-serve workspace (its `tenant_id` is the 32-character workspace ID on the
+  dashboard's Setup page) uses `https://api.atensecurity.com`;
+- a dedicated (Enterprise) tenant derives `https://grid.<tenant_id>.<apex_domain>`.
 
 By default, `apex_domain` is `atensecurity.com`.

@@ -27,6 +27,35 @@ var _ provider.Provider = &thothProvider{}
 
 const defaultApexDomain = "atensecurity.com"
 
+// sharedAPIBaseURL serves trial and self-serve workspaces, which share one
+// runtime and are named by a 32-character workspace ID.
+const sharedAPIBaseURL = "https://api.atensecurity.com"
+
+// defaultAPIBaseURL is the GovAPI address when api_base_url is omitted: the
+// shared runtime for a workspace ID, otherwise the tenant's dedicated grid host.
+func defaultAPIBaseURL(tenantID, apexDomain string) string {
+	if isSharedWorkspaceID(tenantID) {
+		return sharedAPIBaseURL
+	}
+	if apexDomain == "" {
+		apexDomain = defaultApexDomain
+	}
+	return fmt.Sprintf("https://grid.%s.%s", tenantID, apexDomain)
+}
+
+// isSharedWorkspaceID reports a 32-character lowercase hex workspace ID.
+func isSharedWorkspaceID(tenantID string) bool {
+	if len(tenantID) != 32 {
+		return false
+	}
+	for _, c := range tenantID {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
 type thothProvider struct {
 	version string
 }
@@ -64,7 +93,7 @@ func (p *thothProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 		Attributes: map[string]schema.Attribute{
 			"api_base_url": schema.StringAttribute{
 				Optional:    true,
-				Description: "GovAPI base URL override. When omitted, provider derives https://grid.<tenant_id>.<apex_domain>.",
+				Description: "GovAPI base URL override. When omitted, a trial or self-serve workspace (a 32-character workspace ID) uses https://api.atensecurity.com and a dedicated tenant derives https://grid.<tenant_id>.<apex_domain>.",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -180,11 +209,7 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	apiBaseURL := strings.TrimSpace(config.APIBaseURL.ValueString())
 	if apiBaseURL == "" {
-		apexDomain := strings.TrimSpace(config.ApexDomain.ValueString())
-		if apexDomain == "" {
-			apexDomain = defaultApexDomain
-		}
-		apiBaseURL = fmt.Sprintf("https://grid.%s.%s", tenantID, apexDomain)
+		apiBaseURL = defaultAPIBaseURL(tenantID, strings.TrimSpace(config.ApexDomain.ValueString()))
 	}
 
 	token := strings.TrimSpace(config.AdminBearerToken.ValueString())

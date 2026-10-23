@@ -72,7 +72,8 @@ resource "thoth_webhook_settings" "webhook" {
 `regulatory_regimes` is the explicit obligations list used for automatic regulatory pack loading.
 If `regulatory_regimes` is omitted, GovAPI falls back to profile-derived defaults and then `["soc2"]`.
 
-When `api_base_url` is omitted, the provider derives it as:
+When `api_base_url` is omitted, a trial or self-serve workspace (a 32-character
+workspace ID) uses `https://api.atensecurity.com`, and a dedicated tenant derives
 `https://grid.<tenant_id>.<apex_domain>`.
 
 See [`examples/basic`](https://github.com/atensecurity/terraform-provider-thoth/tree/main/examples/basic) for a full end-to-end example.

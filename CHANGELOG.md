@@ -2,6 +2,15 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- A trial or self-serve workspace (a 32-character workspace ID as `tenant_id`) now
+  reaches `https://api.atensecurity.com` when `api_base_url` is omitted. Before, the
+  provider derived `https://grid.<workspace-id>.atensecurity.com`, which exists only
+  for dedicated tenants. Dedicated tenants are unchanged.
+
 ## 0.1.19 - 2026-10-19
 
 ### Added
