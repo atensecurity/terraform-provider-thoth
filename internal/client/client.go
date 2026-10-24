@@ -956,6 +956,19 @@ func (c *Client) DeletePolicyBundle(ctx context.Context, bundleID string) error 
 	return c.doJSON(ctx, http.MethodDelete, path, nil, nil, nil, false)
 }
 
+// ListDecisionsPage reads one page of recorded enforcement decisions, newest
+// first (GET /:tenant/thoth/v1/activity?type=decision). The query carries the
+// filters, limit and cursor; the response has items and next_cursor.
+func (c *Client) ListDecisionsPage(ctx context.Context, query map[string]string) (map[string]any, error) {
+	q := map[string]string{"type": "decision"}
+	for key, value := range query {
+		q[key] = value
+	}
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("v1/activity"), q, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) ListApprovalsWithQuery(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("approvals"), query, nil, &out, true)

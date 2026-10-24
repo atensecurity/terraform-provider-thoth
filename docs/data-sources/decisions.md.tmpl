@@ -1,0 +1,17 @@
+---
+page_title: "thoth_decisions Data Source"
+subcategory: "Runtime and activity"
+description: |-
+  Reads recorded enforcement decisions with the decisions view filters.
+---
+
+# data source: thoth_decisions
+
+```terraform
+data "thoth_decisions" "blocked_deletes" {
+  outcome     = "blocked"
+  tool_name   = "orders.delete"
+  since       = "2026-10-01T00:00:00Z"
+  max_results = 500
+}
+```

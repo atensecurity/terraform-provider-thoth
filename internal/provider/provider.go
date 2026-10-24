@@ -377,6 +377,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		data_sources.NewApprovalsDataSource,
+		data_sources.NewDecisionsDataSource,
 		data_sources.NewAPIKeyAuthorizationDataSource,
 		data_sources.NewAPIKeysDataSource,
 		data_sources.NewBillingPricingDataSource,

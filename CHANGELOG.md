@@ -11,6 +11,9 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   (`store`, `hash` or `drop`). The defaults are `hash` and `drop`, and destroying the
   resource returns the workspace to them. Needs a Thoth API with the data-handling
   endpoint.
+- `thoth_decisions` data source: recorded enforcement decisions, newest first, filtered by
+  outcome, agent, tool, reason code, matched rule and time window. Reads up to
+  `max_results` (default 100, at most 1,000) and sets `truncated` when more matched.
 
 ## 0.1.20 - 2026-10-23
 
