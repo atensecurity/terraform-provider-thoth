@@ -21,6 +21,10 @@ resource "thoth_tool_classification" "read_orders" {
 resource "thoth_tool_classification" "delete_order" {
   tool_name = "orders.delete"
   classes   = ["delete"]
+
+  # Optional context sent to your SIEM with each decision.
+  target_sensitivity = "restricted" # public | internal | confidential | restricted
+  acting_privilege   = "elevated"   # standard | elevated | admin
 }
 ```
 
@@ -34,7 +38,9 @@ resource "thoth_tool_classification" "delete_order" {
 
 ### Optional
 
+- `acting_privilege` (String) Privilege of the identity (credential) the tool acts with: standard, elevated or admin. Sent with each decision in the SIEM decision stream; does not change enforcement.
 - `agent_id` (String) Agent scope. Omit for tenant-wide declarations. Changing scope replaces the declaration; agent classes cannot erase tenant-wide risky effects.
+- `target_sensitivity` (String) How sensitive the tool's target is: public, internal, confidential or restricted. Sent with each decision in the SIEM decision stream; does not change enforcement.
 
 ### Read-Only
 

@@ -10,6 +10,11 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   workspace's SIEM destination. `decisions` is `non_allow` (holds and blocks, the
   default) or `all`, with `allow_sample_rate` for `ALLOW`s. Needs `thoth_siem_settings`
   first; destroying the resource turns the stream off.
+- `thoth_tool_classification` gains optional `target_sensitivity` (`public`, `internal`,
+  `confidential`, `restricted`) and `acting_privilege` (`standard`, `elevated`, `admin`),
+  sent with each decision in the SIEM decision stream. They are sent to the API only
+  when set (or to clear a value you removed), so configurations without them work
+  against older APIs.
 
 ## 0.1.21 - 2026-10-24
 
