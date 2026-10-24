@@ -2,6 +2,16 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+### Added
+
+- `thoth_data_handling` resource: what Thoth keeps of your agents' tool arguments
+  (`store`, `hash`, `redact` or `drop`) and prompts, model output and tool results
+  (`store`, `hash` or `drop`). The defaults are `hash` and `drop`, and destroying the
+  resource returns the workspace to them. Needs a Thoth API with the data-handling
+  endpoint.
+
 ## 0.1.20 - 2026-10-23
 
 ### Fixed

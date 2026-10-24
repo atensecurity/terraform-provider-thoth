@@ -342,6 +342,7 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		resources.NewBillingOverageCapResource,
+		resources.NewDataHandlingResource,
 		resources.NewGovernanceSettingsResource,
 		resources.NewWebhookSettingsResource,
 		resources.NewSIEMSettingsResource,

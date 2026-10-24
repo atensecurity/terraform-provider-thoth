@@ -1,0 +1,15 @@
+---
+page_title: "thoth_data_handling Resource"
+subcategory: "Settings"
+description: |-
+  What Thoth keeps of your agents' tool arguments, prompts and tool output.
+---
+
+# thoth_data_handling
+
+```terraform
+resource "thoth_data_handling" "this" {
+  tool_arguments = "hash" # store | hash | redact | drop
+  prompts        = "drop" # store | hash | drop
+}
+```

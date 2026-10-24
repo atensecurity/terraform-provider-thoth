@@ -738,6 +738,21 @@ func (c *Client) UpdateBillingOverageCap(ctx context.Context, overageCapUSD floa
 	return out, err
 }
 
+// GetDataHandling reads what Thoth keeps of tool arguments and prompts.
+func (c *Client) GetDataHandling(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("settings/data-handling"), nil, nil, &out, true)
+	return out, err
+}
+
+// UpdateDataHandling sets what Thoth keeps of tool arguments and prompts.
+func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts string) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{"tool_arguments": toolArguments, "prompts": prompts}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("settings/data-handling"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) ListBillingInvoices(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.billingPath("invoices"), query, nil, &out, true)
