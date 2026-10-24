@@ -746,6 +746,23 @@ func (c *Client) GetDataHandling(ctx context.Context) (map[string]any, error) {
 }
 
 // UpdateDataHandling sets what Thoth keeps of tool arguments and prompts.
+// GetSIEMDecisionStream reads which decisions reach the workspace's SIEM and
+// how delivery is going.
+func (c *Client) GetSIEMDecisionStream(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("settings/siem/decision-stream"), nil, nil, &out, true)
+	return out, err
+}
+
+// UpdateSIEMDecisionStream sets the decision stream. Turning it on needs a
+// SIEM destination (thoth_siem_settings) first.
+func (c *Client) UpdateSIEMDecisionStream(ctx context.Context, enabled bool, decisions string, allowSampleRate float64) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{"enabled": enabled, "decisions": decisions, "allow_sample_rate": allowSampleRate}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("settings/siem/decision-stream"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts string) (map[string]any, error) {
 	out := map[string]any{}
 	payload := map[string]any{"tool_arguments": toolArguments, "prompts": prompts}

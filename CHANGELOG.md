@@ -2,6 +2,15 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+### Added
+
+- `thoth_siem_decision_stream` resource: which enforcement decisions are sent to the
+  workspace's SIEM destination. `decisions` is `non_allow` (holds and blocks, the
+  default) or `all`, with `allow_sample_rate` for `ALLOW`s. Needs `thoth_siem_settings`
+  first; destroying the resource turns the stream off.
+
 ## 0.1.21 - 2026-10-24
 
 ### Added

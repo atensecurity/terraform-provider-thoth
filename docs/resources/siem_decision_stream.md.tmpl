@@ -1,0 +1,17 @@
+---
+page_title: "thoth_siem_decision_stream Resource"
+subcategory: "Settings"
+description: |-
+  Sends enforcement decisions to the workspace's SIEM destination as they are recorded.
+---
+
+# thoth_siem_decision_stream
+
+```terraform
+resource "thoth_siem_decision_stream" "this" {
+  decisions = "non_allow" # non_allow | all
+  # allow_sample_rate = 0.1 # with decisions = "all": share of ALLOW decisions sent
+
+  depends_on = [thoth_siem_settings.this]
+}
+```
