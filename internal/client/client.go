@@ -748,6 +748,22 @@ func (c *Client) GetDataHandling(ctx context.Context) (map[string]any, error) {
 // UpdateDataHandling sets what Thoth keeps of tool arguments and prompts.
 // GetSIEMDecisionStream reads which decisions reach the workspace's SIEM and
 // how delivery is going.
+// GetAgentEnforcement reads an agent's enforcement mode (observe | enforce) and
+// what a high risk score does while enforcing (hold | deny).
+func (c *Client) GetAgentEnforcement(ctx context.Context, agentID string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("agents/"+url.PathEscape(agentID)+"/enforcement-mode"), nil, nil, &out, true)
+	return out, err
+}
+
+// UpdateAgentEnforcement sets an agent's enforcement mode.
+func (c *Client) UpdateAgentEnforcement(ctx context.Context, agentID, mode, highRiskAction string) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{"enforcement_mode": mode, "high_risk_action": highRiskAction}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("agents/"+url.PathEscape(agentID)+"/enforcement-mode"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) GetSIEMDecisionStream(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("settings/siem/decision-stream"), nil, nil, &out, true)

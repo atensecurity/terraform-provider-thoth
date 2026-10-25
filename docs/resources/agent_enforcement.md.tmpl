@@ -1,0 +1,15 @@
+---
+page_title: "thoth_agent_enforcement Resource"
+subcategory: "Agents"
+description: |-
+  An agent's enforcement mode: observe (record what enforcing would decide) or enforce.
+---
+
+# thoth_agent_enforcement
+
+```terraform
+resource "thoth_agent_enforcement" "billing" {
+  agent_id         = "billing-agent"
+  enforcement_mode = "observe" # observe | enforce
+}
+```

@@ -15,6 +15,9 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   sent with each decision in the SIEM decision stream. They are sent to the API only
   when set (or to clear a value you removed), so configurations without them work
   against older APIs.
+- `thoth_agent_enforcement` resource: an agent's mode, `observe` (Thoth records what
+  enforcing would decide and allows the action) or `enforce`, with `high_risk_action`
+  (`hold` or `deny`). Destroying it returns the agent to `enforce`.
 
 ## 0.1.21 - 2026-10-24
 
