@@ -2,6 +2,15 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+### Added
+
+- `thoth_agent` resource: registers an agent (`agent_id`, `display_name`, `owner_email`,
+  `approved_scope`) and reads back its `status`. It never sets the mode (`thoth_agent_enforcement`)
+  or changes a quarantine. Destroying it only removes it from state: Thoth keeps registrations
+  with their decision history.
+
 ## 0.1.22 - 2026-10-24
 
 ### Added

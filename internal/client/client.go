@@ -756,6 +756,23 @@ func (c *Client) GetAgentEnforcement(ctx context.Context, agentID string) (map[s
 	return out, err
 }
 
+// GetAgent reads a registered agent: display name, owner, approved scope and status.
+func (c *Client) GetAgent(ctx context.Context, agentID string) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("agents/"+url.PathEscape(agentID)), nil, nil, &out, true)
+	return out, err
+}
+
+// RegisterAgent registers an agent, or updates its registration. It never
+// sets the enforcement mode (thoth_agent_enforcement does) and never changes
+// a quarantine.
+func (c *Client) RegisterAgent(ctx context.Context, agentID, displayName, ownerEmail string, approvedScope []string) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{"display_name": displayName, "owner_email": ownerEmail, "approved_scope": approvedScope}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("agents/"+url.PathEscape(agentID)+"/register"), nil, payload, &out, false)
+	return out, err
+}
+
 // UpdateAgentEnforcement sets an agent's enforcement mode.
 func (c *Client) UpdateAgentEnforcement(ctx context.Context, agentID, mode, highRiskAction string) (map[string]any, error) {
 	out := map[string]any{}

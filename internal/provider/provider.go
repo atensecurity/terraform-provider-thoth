@@ -345,6 +345,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewDataHandlingResource,
 		resources.NewSIEMDecisionStreamResource,
 		resources.NewAgentEnforcementResource,
+		resources.NewAgentResource,
 		resources.NewGovernanceSettingsResource,
 		resources.NewWebhookSettingsResource,
 		resources.NewSIEMSettingsResource,
