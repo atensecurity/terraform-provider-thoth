@@ -2,7 +2,7 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
-## Unreleased
+## 0.1.23 - 2026-10-25
 
 ### Added
 
