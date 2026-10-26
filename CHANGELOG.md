@@ -2,6 +2,14 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `thoth_policy_exception.hold_token` is sensitive and write-only. Thoth no longer returns hold
+  tokens from the exception API, since a hold token is a credential, so reads keep the
+  configured value instead of planning a replacement.
+
 ## 0.1.23 - 2026-10-25
 
 ### Added

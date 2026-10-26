@@ -40,7 +40,7 @@ resource "thoth_policy_exception" "crm_export" {
 
 - `agent_id` (String) Agent ID associated with the request.
 - `alternatives_considered` (String) Optional alternatives reviewed before requesting an exception.
-- `hold_token` (String) Optional hold token when exception is tied to STEP_UP workflow.
+- `hold_token` (String, Sensitive) Optional hold token when exception is tied to STEP_UP workflow. Write-only: the API never returns it.
 - `request_id` (String) Optional request ID. If omitted, enforcer generates one.
 - `tool_name` (String) Tool/action name associated with the request.
 

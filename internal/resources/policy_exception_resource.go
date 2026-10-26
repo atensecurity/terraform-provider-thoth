@@ -79,7 +79,8 @@ func (r *policyExceptionResource) Schema(_ context.Context, _ resource.SchemaReq
 			},
 			"hold_token": schema.StringAttribute{
 				Optional:      true,
-				Description:   "Optional hold token when exception is tied to STEP_UP workflow.",
+				Sensitive:     true,
+				Description:   "Optional hold token when exception is tied to STEP_UP workflow. Write-only: the API never returns it.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"agent_id": schema.StringAttribute{
@@ -252,7 +253,11 @@ func flattenPolicyException(
 	next.RequestID = types.StringValue(requestID)
 	next.TenantID = types.StringValue(tenantID)
 	next.ViolationID = nullableResourceString(row, "violation_id")
-	next.HoldToken = nullableResourceString(row, "hold_token")
+	// The API no longer returns the hold token (it is a credential), so keep
+	// the configured value.
+	if _, returned := row["hold_token"]; returned {
+		next.HoldToken = nullableResourceString(row, "hold_token")
+	}
 	next.AgentID = nullableResourceString(row, "agent_id")
 	next.ToolName = nullableResourceString(row, "tool_name")
 	next.RequestedBy = nullableResourceString(row, "requested_by")

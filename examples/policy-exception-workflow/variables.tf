@@ -18,6 +18,7 @@ variable "hold_token" {
   description = "Optional hold token for STEP_UP-linked exceptions."
   type        = string
   default     = ""
+  sensitive   = true
 }
 
 variable "agent_id" {
