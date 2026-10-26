@@ -82,21 +82,31 @@ func (r *toolClassificationResource) Configure(_ context.Context, req resource.C
 		r.client = data.Client
 	}
 }
-func (r *toolClassificationResource) write(ctx context.Context, model, prior *toolClassificationModel, method string) error {
+
+// toolClassificationBody is the request body for a declaration write.
+func toolClassificationBody(ctx context.Context, model, prior *toolClassificationModel) (map[string]any, error) {
 	var classes []string
 	diags := model.Classes.ElementsAs(ctx, &classes, false)
 	if diags.HasError() {
-		return fmt.Errorf("invalid classes")
-	}
-	id := model.ID.ValueString()
-	if method == http.MethodPost {
-		id = ""
+		return nil, fmt.Errorf("invalid classes")
 	}
 	body := map[string]any{"tool_name": model.ToolName.ValueString(), "classes": classes}
 	if !model.AgentID.IsNull() && !model.AgentID.IsUnknown() {
 		body["agent_id"] = model.AgentID.ValueString()
 	}
 	contextFields(body, model, prior)
+	return body, nil
+}
+
+func (r *toolClassificationResource) write(ctx context.Context, model, prior *toolClassificationModel, method string) error {
+	body, err := toolClassificationBody(ctx, model, prior)
+	if err != nil {
+		return err
+	}
+	id := model.ID.ValueString()
+	if method == http.MethodPost {
+		id = ""
+	}
 	row, err := r.client.ToolClassification(ctx, method, id, body)
 	if err != nil {
 		return err
