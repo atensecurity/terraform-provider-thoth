@@ -1,0 +1,21 @@
+---
+page_title: "thoth_org_security_settings Resource"
+subcategory: "Settings"
+description: |-
+  Sign-in security for the workspace: require MFA, limit sign-in length, restrict networks.
+---
+
+# thoth_org_security_settings
+
+```terraform
+resource "thoth_org_security_settings" "this" {
+  require_mfa             = true
+  session_timeout_minutes = 480 # 8 hours; an absolute lifetime, not an idle timeout
+
+  # Canonical CIDR form. Include the network this Terraform run connects from.
+  ip_allowlist = [
+    "203.0.113.0/24",
+    "198.51.100.7/32",
+  ]
+}
+```

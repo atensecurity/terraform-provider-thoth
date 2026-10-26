@@ -390,6 +390,28 @@ func (c *Client) UpdateTenantSettings(ctx context.Context, payload map[string]an
 	return out, err
 }
 
+// orgSecurityPath is outside /thoth: GovAPI serves org security settings at
+// /:tenant-id/settings/security.
+func (c *Client) orgSecurityPath() string {
+	return fmt.Sprintf("/%s/settings/security", c.tenantID)
+}
+
+func (c *Client) GetOrgSecuritySettings(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.orgSecurityPath(), nil, nil, &out, true)
+	return out, err
+}
+
+func (c *Client) UpdateOrgSecuritySettings(ctx context.Context, payload map[string]any) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodPut, c.orgSecurityPath(), nil, payload, &out, true)
+	return out, err
+}
+
+func (c *Client) DeleteOrgSecuritySettings(ctx context.Context) error {
+	return c.doJSON(ctx, http.MethodDelete, c.orgSecurityPath(), nil, nil, nil, true)
+}
+
 func (c *Client) TestWebhook(ctx context.Context) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("settings/webhook/test"), nil, map[string]any{}, &out, false)

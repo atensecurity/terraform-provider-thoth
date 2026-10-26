@@ -350,6 +350,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewWebhookSettingsResource,
 		resources.NewSIEMSettingsResource,
 		resources.NewPAMSettingsResource,
+		resources.NewOrgSecuritySettingsResource,
 		resources.NewMDMProviderResource,
 		resources.NewMDMSyncResource,
 		resources.NewBrowserProviderResource,

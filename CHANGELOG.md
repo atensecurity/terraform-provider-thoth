@@ -4,6 +4,15 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `thoth_org_security_settings` resource: sign-in security for the workspace. `require_mfa`
+  asks every sign-in session (dashboard, thothctl, MCP) for a second factor;
+  `session_timeout_minutes` (15 to 43200, default 720) limits how long a sign-in lasts; and
+  `ip_allowlist` restricts the networks people and API keys may connect from. GovAPI enforces
+  all three. Destroying the resource removes the policy. Ranges must be written in canonical
+  CIDR form, and the allowlist must include the address the Terraform run connects from.
+
 ### Changed
 
 - `thoth_policy_exception.hold_token` is sensitive and write-only. Thoth no longer returns hold
