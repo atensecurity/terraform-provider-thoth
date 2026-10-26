@@ -84,6 +84,24 @@ func TestParityAgentEnforcementMode(t *testing.T) {
 	assertParity(t, want, got)
 }
 
+func TestParityDataHandling(t *testing.T) {
+	want := loadParityTerraform(t, "data_handling")
+	c, got := captureRequest(t)
+	if _, err := c.UpdateDataHandling(context.Background(), "redact", "hash"); err != nil {
+		t.Fatal(err)
+	}
+	assertParity(t, want, got)
+}
+
+func TestParitySIEMDecisionStream(t *testing.T) {
+	want := loadParityTerraform(t, "siem_decision_stream")
+	c, got := captureRequest(t)
+	if _, err := c.UpdateSIEMDecisionStream(context.Background(), false, "all", 0.25); err != nil {
+		t.Fatal(err)
+	}
+	assertParity(t, want, got)
+}
+
 func TestParityToolDeclaration(t *testing.T) {
 	str := func(v string) types.String {
 		if v == "" {
