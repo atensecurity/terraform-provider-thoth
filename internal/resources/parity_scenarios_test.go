@@ -85,21 +85,36 @@ func TestParityAgentEnforcementMode(t *testing.T) {
 }
 
 func TestParityToolDeclaration(t *testing.T) {
-	want := loadParityTerraform(t, "tool_declaration")
-	ctx := context.Background()
-	classes, diags := types.SetValueFrom(ctx, types.StringType, []string{"read"})
-	if diags.HasError() {
-		t.Fatal(diags)
+	str := func(v string) types.String {
+		if v == "" {
+			return types.StringNull()
+		}
+		return types.StringValue(v)
 	}
-	model := toolClassificationModel{ToolName: types.StringValue("orders.list"), Classes: classes, AgentID: types.StringNull(), TargetSensitivity: types.StringNull(), ActingPrivilege: types.StringNull()}
-	body, err := toolClassificationBody(ctx, &model, nil)
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range []struct {
+		scenario, tool, class, agent, sensitivity, privilege string
+	}{
+		{"tool_declaration", "orders.list", "read", "", "", ""},
+		{"tool_declaration_agent_context", "payments.refund", "write", "agent-a", "restricted", "elevated"},
+	} {
+		t.Run(tc.scenario, func(t *testing.T) {
+			want := loadParityTerraform(t, tc.scenario)
+			ctx := context.Background()
+			classes, diags := types.SetValueFrom(ctx, types.StringType, []string{tc.class})
+			if diags.HasError() {
+				t.Fatal(diags)
+			}
+			model := toolClassificationModel{ToolName: types.StringValue(tc.tool), Classes: classes, AgentID: str(tc.agent), TargetSensitivity: str(tc.sensitivity), ActingPrivilege: str(tc.privilege)}
+			body, err := toolClassificationBody(ctx, &model, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c, got := captureRequest(t)
+			// A resource create posts the declaration.
+			if _, err := c.ToolClassification(ctx, http.MethodPost, "", body); err != nil {
+				t.Fatal(err)
+			}
+			assertParity(t, want, got)
+		})
 	}
-	c, got := captureRequest(t)
-	// A resource create posts the declaration.
-	if _, err := c.ToolClassification(ctx, http.MethodPost, "", body); err != nil {
-		t.Fatal(err)
-	}
-	assertParity(t, want, got)
 }
