@@ -68,6 +68,8 @@ type providerModel struct {
 	AdminBearerTokenFile  types.String `tfsdk:"admin_bearer_token_file"`
 	OrgAPIKey             types.String `tfsdk:"org_api_key"`
 	OrgAPIKeyFile         types.String `tfsdk:"org_api_key_file"`
+	UseThothctlSession    types.Bool   `tfsdk:"use_thothctl_session"`
+	ThothctlSessionFile   types.String `tfsdk:"thothctl_session_file"`
 	RetryMaxAttempts      types.Int64  `tfsdk:"retry_max_attempts"`
 	RetryBaseDelayMs      types.Int64  `tfsdk:"retry_base_delay_ms"`
 	RetryMaxDelayMs       types.Int64  `tfsdk:"retry_max_delay_ms"`
@@ -129,6 +131,16 @@ func (p *thothProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 			"org_api_key_file": schema.StringAttribute{
 				Optional:    true,
 				Description: "Path to a file containing the organization-scoped API key.",
+			},
+			"use_thothctl_session": schema.BoolAttribute{
+				Optional: true,
+				Description: "Act as the person signed in with `thothctl auth login`, renewing the session as thothctl does. " +
+					"Needed for changes that belong to a person (Slack reviewers, team members). Changes that need a recent " +
+					"second factor use the proof from `thothctl auth step-up`. Also read from THOTH_USE_THOTHCTL_SESSION=true.",
+			},
+			"thothctl_session_file": schema.StringAttribute{
+				Optional:    true,
+				Description: "The thothctl session to use. Defaults to the one `thothctl auth login` saved for this workspace and GovAPI (~/.thoth/sessions/).",
 			},
 			"retry_max_attempts": schema.Int64Attribute{
 				Optional:    true,
@@ -218,6 +230,14 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	orgAPIKeyFile := strings.TrimSpace(config.OrgAPIKeyFile.ValueString())
 	envOrgAPIKey := strings.TrimSpace(os.Getenv("THOTH_API_KEY"))
 
+	useSession := boolValueWithDefault(config.UseThothctlSession, strings.EqualFold(strings.TrimSpace(os.Getenv("THOTH_USE_THOTHCTL_SESSION")), "true"))
+	if useSession && (token != "" || tokenFile != "" || orgAPIKey != "" || orgAPIKeyFile != "") {
+		resp.Diagnostics.AddError(
+			"Conflicting credentials",
+			"use_thothctl_session signs in as a person; remove admin_bearer_token, org_api_key and their file settings.",
+		)
+		return
+	}
 	if token != "" && orgAPIKey != "" {
 		resp.Diagnostics.AddError(
 			"Conflicting credentials",
@@ -233,11 +253,11 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	if token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" && envOrgAPIKey == "" {
+	if !useSession && token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" && envOrgAPIKey == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("org_api_key"),
 			"Missing credentials",
-			"Set org_api_key/org_api_key_file (recommended for CI/CD), export THOTH_API_KEY (must be org-scoped), or configure admin_bearer_token/admin_bearer_token_file.",
+			"Set org_api_key/org_api_key_file (recommended for CI/CD), export THOTH_API_KEY (must be org-scoped), set use_thothctl_session = true after `thothctl auth login`, or configure admin_bearer_token/admin_bearer_token_file.",
 		)
 		return
 	}
@@ -289,7 +309,24 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 		return
 	}
-	if token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" {
+	var session *client.UserSession
+	if useSession {
+		sessionFile := strings.TrimSpace(config.ThothctlSessionFile.ValueString())
+		if sessionFile == "" {
+			defaultPath, err := client.DefaultSessionPath(tenantID, apiBaseURL)
+			if err != nil {
+				resp.Diagnostics.AddError("Cannot find the thothctl session", err.Error())
+				return
+			}
+			sessionFile = defaultPath
+		}
+		loaded, err := client.LoadUserSession(sessionFile, tenantID, apiBaseURL)
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("use_thothctl_session"), "Cannot use the thothctl session", err.Error())
+			return
+		}
+		session = loaded
+	} else if token == "" && tokenFile == "" && orgAPIKey == "" && orgAPIKeyFile == "" {
 		orgAPIKey = envOrgAPIKey
 	}
 
@@ -311,6 +348,7 @@ func (p *thothProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		TenantID:              tenantID,
 		AuthToken:             token,
 		APIKey:                orgAPIKey,
+		Session:               session,
 		UserAgent:             fmt.Sprintf("%s/%s", provisionerName, providerVersion),
 		ProvisionedVia:        provisionedVia,
 		Provisioner:           provisionerName,

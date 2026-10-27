@@ -6,6 +6,10 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Added
 
+- `use_thothctl_session` (and `thothctl_session_file`): the provider acts as the person signed in
+  with `thothctl auth login`, renewing the session as thothctl does and sharing it. Changes that
+  need a recent second factor use the proof from `thothctl auth step-up`. Needed for changes that
+  belong to a person, such as Slack reviewers and team members; CI/CD keeps using API keys.
 - `thoth_model_artifact` resource: registers a model artifact and takes it through Thoth's
   activation gate (`provenance` verification, then `screening` or `waiver_reason`, then
   `activate`). Registration fields cannot change, and activation and waivers cannot be undone;

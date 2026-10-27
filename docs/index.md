@@ -54,6 +54,33 @@ Use one of:
 - `tenant_id`
 - `THOTH_TENANT_ID` environment variable
 
+### Signed in as a person: the thothctl session
+
+Some changes belong to a person rather than a machine: appointing Slack reviewers and managing team
+members need a verified signed-in user, and API keys cannot make them. For those, sign in with
+thothctl and let the provider use that session:
+
+```shell
+thothctl auth login --tenant-id <workspace>
+thothctl auth step-up --tenant-id <workspace>   # before changes that need a recent second factor
+terraform apply
+```
+
+```terraform
+provider "thoth" {
+  tenant_id            = var.tenant_id
+  use_thothctl_session = true
+}
+```
+
+- The provider reads the session `thothctl auth login` saved for this workspace and GovAPI
+  (`~/.thoth/sessions/`), or `thothctl_session_file`, and refuses one saved for another workspace.
+- It renews the session as thothctl does and writes the renewed session back, so the provider and
+  thothctl keep sharing one sign-in.
+- Changes that need a recent second factor use the proof `thothctl auth step-up` caches for about
+  15 minutes. Without one, the refusal says to run it; a Terraform run cannot open the browser.
+- Use it from a person's terminal. CI/CD should keep using an organization API key.
+
 ### Alternative: Admin Bearer Token
 
 Use one of:
@@ -63,7 +90,7 @@ Use one of:
 
 ### Auth Resolution Rules
 
-- `org_api_key*` and `admin_bearer_token*` are mutually exclusive. Configuring both fails provider initialization.
+- `org_api_key*`, `admin_bearer_token*` and `use_thothctl_session` are mutually exclusive. Configuring more than one fails provider initialization.
 - If both inline and file inputs are set for the same auth mode, inline value is used.
 - `THOTH_API_KEY` is only used when no explicit auth attributes are set.
 - Provider initialization fails if no usable credentials are supplied.
@@ -123,3 +150,5 @@ By default, `apex_domain` is `atensecurity.com`.
 - `retry_base_delay_ms` (Number) Base delay in milliseconds for exponential retry backoff.
 - `retry_max_attempts` (Number) Maximum retry attempts for transient API/network failures.
 - `retry_max_delay_ms` (Number) Maximum delay in milliseconds for retry backoff.
+- `thothctl_session_file` (String) The thothctl session to use. Defaults to the one `thothctl auth login` saved for this workspace and GovAPI (~/.thoth/sessions/).
+- `use_thothctl_session` (Boolean) Act as the person signed in with `thothctl auth login`, renewing the session as thothctl does. Needed for changes that belong to a person (Slack reviewers, team members). Changes that need a recent second factor use the proof from `thothctl auth step-up`. Also read from THOTH_USE_THOTHCTL_SESSION=true.

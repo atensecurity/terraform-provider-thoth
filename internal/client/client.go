@@ -26,10 +26,12 @@ const (
 
 // Config defines the client configuration.
 type Config struct {
-	BaseURL               string
-	TenantID              string
-	AuthToken             string
-	APIKey                string
+	BaseURL   string
+	TenantID  string
+	AuthToken string
+	APIKey    string
+	// Session is a signed-in user's thothctl session (user_session.go).
+	Session               *UserSession
 	UserAgent             string
 	ProvisionedVia        string
 	Provisioner           string
@@ -68,6 +70,7 @@ type Client struct {
 	tenantID         string
 	authToken        string
 	apiKey           string
+	session          *UserSession
 	userAgent        string
 	provisionedVia   string
 	provisioner      string
@@ -94,11 +97,17 @@ func New(cfg Config) (*Client, error) {
 	}
 	authToken := strings.TrimSpace(cfg.AuthToken)
 	apiKey := strings.TrimSpace(cfg.APIKey)
-	if authToken == "" && apiKey == "" {
-		return nil, errors.New("either auth token or org API key must be configured")
+	configured := 0
+	for _, set := range []bool{authToken != "", apiKey != "", cfg.Session != nil} {
+		if set {
+			configured++
+		}
 	}
-	if authToken != "" && apiKey != "" {
-		return nil, errors.New("configure only one auth method: auth token or org API key")
+	if configured == 0 {
+		return nil, errors.New("configure an auth token, an org API key or a thothctl session")
+	}
+	if configured > 1 {
+		return nil, errors.New("configure only one auth method: auth token, org API key or thothctl session")
 	}
 
 	retryMaxAttempts := cfg.RetryMaxAttempts
@@ -145,6 +154,7 @@ func New(cfg Config) (*Client, error) {
 		baseURL:          baseURL,
 		tenantID:         tenantID,
 		authToken:        authToken,
+		session:          cfg.Session,
 		apiKey:           apiKey,
 		userAgent:        strings.TrimSpace(cfg.UserAgent),
 		provisionedVia:   strings.TrimSpace(strings.ToLower(cfg.ProvisionedVia)),
@@ -214,9 +224,19 @@ func (c *Client) doJSON(
 			return fmt.Errorf("build request: %w", err)
 		}
 		req.Header.Set("Accept", "application/json")
-		if c.apiKey != "" {
+		switch {
+		case c.apiKey != "":
 			req.Header.Set("X-Api-Key", c.apiKey)
-		} else {
+		case c.session != nil:
+			token, err := c.session.Token(ctx, c.httpClient)
+			if err != nil {
+				return err
+			}
+			req.Header.Set("Authorization", "Bearer "+token)
+			if proof := c.session.StepUpProof(); proof != "" {
+				req.Header.Set(stepUpProofHeader, proof)
+			}
+		default:
 			req.Header.Set("Authorization", "Bearer "+c.authToken)
 		}
 		if c.userAgent != "" {
@@ -262,6 +282,7 @@ func (c *Client) doJSON(
 		}
 
 		apiErr := decodeAPIError(resp.StatusCode, respBytes)
+		c.explainStepUp(apiErr)
 		if retryable && attempt < c.retryMaxAttempts && isRetryableStatus(resp.StatusCode) {
 			if sleepErr := c.waitBackoff(ctx, attempt); sleepErr != nil {
 				return sleepErr
@@ -368,6 +389,21 @@ func decodeAPIError(status int, body []byte) error {
 	}
 	return apiErr
 }
+
+// explainStepUp says how to give a signed-in session the recent second factor
+// a refusal asks for: a Terraform run cannot open the browser itself.
+func (c *Client) explainStepUp(err error) {
+	var apiErr *APIError
+	if c.session == nil || !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusForbidden ||
+		!strings.Contains(strings.ToLower(apiErr.Message), "step-up authentication") {
+		return
+	}
+	apiErr.Message += ". Run `thothctl auth step-up --tenant-id " + c.tenantID + "`, confirm in the browser, then run Terraform again within 15 minutes"
+}
+
+// IsSignedInUser reports whether requests are made as a signed-in person
+// (a thothctl session or an admin bearer token) rather than an API key.
+func (c *Client) IsSignedInUser() bool { return c.apiKey == "" }
 
 // IsNotFound reports whether err is an API 404.
 func IsNotFound(err error) bool {
