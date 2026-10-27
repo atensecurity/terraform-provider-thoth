@@ -6,6 +6,11 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Added
 
+- `thoth_model_artifact` resource: registers a model artifact and takes it through Thoth's
+  activation gate (`provenance` verification, then `screening` or `waiver_reason`, then
+  `activate`). Registration fields cannot change, and activation and waivers cannot be undone;
+  Terraform refuses plans that try. Destroying it keeps the artifact and its evidence in Thoth.
+- `thoth_model_artifacts` data source: lists registered artifacts, optionally by lifecycle status.
 - `thoth_org_security_settings` resource: sign-in security for the workspace. `require_mfa`
   asks every sign-in session (dashboard, thothctl, MCP) for a second factor;
   `session_timeout_minutes` (15 to 43200, default 720) limits how long a sign-in lasts; and
