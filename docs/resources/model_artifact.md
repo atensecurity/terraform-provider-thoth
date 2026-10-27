@@ -25,8 +25,8 @@ resource "thoth_model_artifact" "fraud_scorer" {
     certificate_identity    = "release@acme.example"
     certificate_oidc_issuer = "https://token.actions.githubusercontent.com"
     transparency_log_uri    = "https://rekor.sigstore.dev/api/v1/log/entries/..."
-    signature_bundle_ref    = "oci://registry.acme.example/fraud-scorer@sha256:4f2a....sig"
-    intoto_attestation_ref  = "oci://registry.acme.example/fraud-scorer@sha256:4f2a....att"
+    signature_bundle_ref    = "https://evidence.acme.example/fraud-scorer/2.1.0/model.sigstore.json"
+    intoto_attestation_ref  = "https://evidence.acme.example/fraud-scorer/2.1.0/provenance.sigstore.json"
   }
 
   screening = {
@@ -44,9 +44,13 @@ resource "thoth_model_artifact" "fraud_scorer" {
    one registers a new artifact; give it a new `artifact_id` if you set one.
 2. **Provenance:** the `provenance` block is checked against the profile (`connected` or
    `sovereign`), its allowed issuers, identities and transparency logs, and the artifact digest.
-   Thoth checks signatures and attestations cryptographically (cosign) only when the workspace has
-   signature verification turned on; otherwise the check covers the evidence references and
-   allowlists only. `verification_mode = "manual"` with `manual_status` records an admin's
+   With signature verification turned on, Thoth checks the Sigstore bundle against `digest_sha256`
+   (the model is never downloaded): for `connected`, the certificate must chain to the Sigstore
+   public-good root, carry the exact identity and issuer, and have certificate-transparency and
+   transparency-log entries; for `sovereign`, the signature must verify with the PEM public key.
+   With in-toto required, the attestation bundle must be SLSA provenance for the same digest.
+   Bundles are fetched over HTTPS from hosts the workspace allows. Without signature verification,
+   the check covers the evidence references and allowlists only. `verification_mode = "manual"` with `manual_status` records an admin's
    attestation instead. A failed verification marks the artifact rejected.
 3. **Screening or waiver:** a `screening` block records the scan result; `waiver_reason` waives
    screening instead.
@@ -71,7 +75,7 @@ needs an admin with a recent second factor, or a Thoth API key with write permis
 
 - `activate` (Boolean) Activate the artifact. Needs verified provenance and a passed screening or a waiver. Cannot be undone.
 - `artifact_id` (String) Artifact ID. Generated when unset. A registered ID cannot be reused.
-- `digest_sha256` (String) SHA-256 digest of the artifact. Provenance evidence must name it.
+- `digest_sha256` (String) SHA-256 digest of the artifact, as 64 hex characters. Signatures are verified against it, so the model itself is never downloaded; required for signature verification.
 - `provenance` (Attributes) Provenance verification, run on create and whenever this block changes. Thoth checks the evidence against the profile and its allowlists, and checks signatures cryptographically only when the workspace has signature verification turned on. A failed verification marks the artifact rejected. (see [below for nested schema](#nestedatt--provenance))
 - `provenance_profile` (String) connected (Sigstore keyless, the default) or sovereign (tenant-managed keys, no public transparency log).
 - `screening` (Attributes) Screening result, recorded on create and whenever this block changes. (see [below for nested schema](#nestedatt--screening))
@@ -97,10 +101,10 @@ Optional:
 - `certificate_identity` (String) Signing certificate identity (connected profile).
 - `certificate_oidc_issuer` (String) Signing certificate OIDC issuer (connected profile).
 - `evidence_ref` (String) Other evidence reference.
-- `intoto_attestation_ref` (String) in-toto attestation reference.
+- `intoto_attestation_ref` (String) HTTPS URL of the Sigstore bundle holding the SLSA provenance attestation for the artifact digest.
 - `manual_status` (String) With verification_mode = "manual": the status an admin attests (verified, failed, revoked or pending). Recorded as a manual attestation, not a verification by Thoth.
-- `public_key_ref` (String) Public key reference (sovereign profile).
-- `signature_bundle_ref` (String) Signature bundle reference.
+- `public_key_ref` (String) The PEM-encoded public key that signs the artifact (sovereign profile). The key itself, not a path or KMS reference.
+- `signature_bundle_ref` (String) HTTPS URL of the Sigstore bundle signing the artifact digest, on a host the workspace allows.
 - `transparency_log_uri` (String) Transparency log entry URI.
 - `verification_mode` (String) sigstore_keyless (connected), tenant_managed_keys (sovereign) or manual. Defaults to the profile's mode.
 

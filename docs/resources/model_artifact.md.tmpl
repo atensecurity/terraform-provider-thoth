@@ -20,8 +20,8 @@ resource "thoth_model_artifact" "fraud_scorer" {
     certificate_identity    = "release@acme.example"
     certificate_oidc_issuer = "https://token.actions.githubusercontent.com"
     transparency_log_uri    = "https://rekor.sigstore.dev/api/v1/log/entries/..."
-    signature_bundle_ref    = "oci://registry.acme.example/fraud-scorer@sha256:4f2a....sig"
-    intoto_attestation_ref  = "oci://registry.acme.example/fraud-scorer@sha256:4f2a....att"
+    signature_bundle_ref    = "https://evidence.acme.example/fraud-scorer/2.1.0/model.sigstore.json"
+    intoto_attestation_ref  = "https://evidence.acme.example/fraud-scorer/2.1.0/provenance.sigstore.json"
   }
 
   screening = {

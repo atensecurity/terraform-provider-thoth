@@ -117,7 +117,7 @@ func (r *modelArtifactResource) Schema(_ context.Context, _ resource.SchemaReque
 			"model_provider": replaceString("Model provider, such as openai or huggingface.", true),
 			"artifact_uri":   replaceString("Where the artifact is stored.", true),
 			"version":        replaceString("Artifact version.", false),
-			"digest_sha256":  replaceString("SHA-256 digest of the artifact. Provenance evidence must name it.", false),
+			"digest_sha256":  replaceString("SHA-256 digest of the artifact, as 64 hex characters. Signatures are verified against it, so the model itself is never downloaded; required for signature verification.", false),
 			"signing_status": replaceString("Signing status at registration, such as signed or unsigned. Thoth sets it to verified when provenance verifies.", false),
 			"provenance_profile": func() schema.StringAttribute {
 				a := replaceString("connected (Sigstore keyless, the default) or sovereign (tenant-managed keys, no public transparency log).", false)
@@ -144,9 +144,9 @@ func (r *modelArtifactResource) Schema(_ context.Context, _ resource.SchemaReque
 					"certificate_identity":    optional("Signing certificate identity (connected profile)."),
 					"certificate_oidc_issuer": optional("Signing certificate OIDC issuer (connected profile)."),
 					"transparency_log_uri":    optional("Transparency log entry URI."),
-					"signature_bundle_ref":    optional("Signature bundle reference."),
-					"intoto_attestation_ref":  optional("in-toto attestation reference."),
-					"public_key_ref":          optional("Public key reference (sovereign profile)."),
+					"signature_bundle_ref":    optional("HTTPS URL of the Sigstore bundle signing the artifact digest, on a host the workspace allows."),
+					"intoto_attestation_ref":  optional("HTTPS URL of the Sigstore bundle holding the SLSA provenance attestation for the artifact digest."),
+					"public_key_ref":          optional("The PEM-encoded public key that signs the artifact (sovereign profile). The key itself, not a path or KMS reference."),
 					"evidence_ref":            optional("Other evidence reference."),
 				},
 			},
