@@ -1,0 +1,15 @@
+---
+page_title: "thoth_slack_approvals Resource"
+subcategory: "Integrations"
+description: |-
+  The Slack approvals channel and reviewers.
+---
+
+# thoth_slack_approvals
+
+```terraform
+resource "thoth_slack_approvals" "this" {
+  channel_id      = "C0123456789"
+  reviewer_emails = ["ana@acme.example", "bo@acme.example"]
+}
+```

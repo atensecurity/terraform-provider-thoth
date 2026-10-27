@@ -390,6 +390,8 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewPAMSettingsResource,
 		resources.NewOrgSecuritySettingsResource,
 		resources.NewModelArtifactResource,
+		resources.NewTeamMemberResource,
+		resources.NewSlackApprovalsResource,
 		resources.NewMDMProviderResource,
 		resources.NewMDMSyncResource,
 		resources.NewBrowserProviderResource,

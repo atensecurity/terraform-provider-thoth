@@ -6,6 +6,11 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Added
 
+- `thoth_team_member` resource: invite a person, set their role and remove them, on self-serve,
+  trial and dedicated workspaces.
+- `thoth_slack_approvals` resource: the Slack approvals channel and the reviewers who may approve
+  held actions, by email.
+- Both need a signed-in admin (`use_thothctl_session`); API-key runs are refused with the fix.
 - `use_thothctl_session` (and `thothctl_session_file`): the provider acts as the person signed in
   with `thothctl auth login`, renewing the session as thothctl does and sharing it. Changes that
   need a recent second factor use the proof from `thothctl auth step-up`. Needed for changes that

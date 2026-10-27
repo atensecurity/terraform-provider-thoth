@@ -1,0 +1,15 @@
+---
+page_title: "thoth_team_member Resource"
+subcategory: "People"
+description: |-
+  One person in the workspace and their role.
+---
+
+# thoth_team_member
+
+```terraform
+resource "thoth_team_member" "dana" {
+  email = "dana@acme.example"
+  role  = "admin" # admin, or viewer (self-serve and trial) / member (dedicated)
+}
+```
