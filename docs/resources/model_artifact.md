@@ -50,7 +50,13 @@ resource "thoth_model_artifact" "fraud_scorer" {
    transparency-log entries; for `sovereign`, the signature must verify with the PEM public key.
    With in-toto required, the attestation bundle must be SLSA provenance for the same digest.
    Bundles are fetched over HTTPS from hosts the workspace allows. Without signature verification,
-   the check covers the evidence references and allowlists only. `verification_mode = "manual"` with `manual_status` records an admin's
+   the check covers the evidence references and allowlists only.
+
+   Verification proves that the trusted signer signed `digest_sha256`. Thoth never loads the model,
+   so whatever loads it from `artifact_uri` must check that its SHA-256 matches; the activation
+   evidence records the verified digest, the mode and the signer. For `sovereign`, the key is the
+   one supplied with the verification and is recorded by its SHA-256 fingerprint; keys are not yet
+   pinned per workspace. `verification_mode = "manual"` with `manual_status` records an admin's
    attestation instead. A failed verification marks the artifact rejected.
 3. **Screening or waiver:** a `screening` block records the scan result; `waiver_reason` waives
    screening instead.
