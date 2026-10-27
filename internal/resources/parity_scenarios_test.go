@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/atensecurity/terraform-provider-thoth/internal/client"
@@ -135,4 +137,18 @@ func TestParityToolDeclaration(t *testing.T) {
 			assertParity(t, want, got)
 		})
 	}
+}
+
+func TestParityOrgSecuritySettings(t *testing.T) {
+	want := loadParityTerraform(t, "org_security_settings")
+	c, got := captureRequest(t)
+	r := &orgSecuritySettingsResource{client: c, tenantID: "tenant-a"}
+	var diags diag.Diagnostics
+	plan := orgSecuritySettingsModel{
+		RequireMFA:            types.BoolValue(true),
+		SessionTimeoutMinutes: types.Int64Value(240),
+		IPAllowlist:           types.SetValueMust(types.StringType, []attr.Value{types.StringValue("192.0.2.0/24"), types.StringValue("203.0.113.7/32")}),
+	}
+	r.apply(context.Background(), plan, &diags)
+	assertParity(t, want, got)
 }
