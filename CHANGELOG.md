@@ -2,7 +2,9 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
-## Unreleased
+## 0.1.23 - 2026-10-28
+
+Version 0.1.23 was prepared on 25 October but never published; this release contains it and everything since. Needs the server from production v0.6.13 or later (deployed 28 October 2026) for `thoth_policy`, `thoth_team_member`, `thoth_slack_approvals`, `thoth_model_artifact` and `thoth_org_security_settings`.
 
 ### Added
 
@@ -31,6 +33,10 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
   `ip_allowlist` restricts the networks people and API keys may connect from. GovAPI enforces
   all three. Destroying the resource removes the policy. Ranges must be written in canonical
   CIDR form, and the allowlist must include the address the Terraform run connects from.
+- `thoth_agent` resource: registers an agent (`agent_id`, `display_name`, `owner_email`,
+  `approved_scope`) and reads back its `status`. It never sets the mode (`thoth_agent_enforcement`)
+  or changes a quarantine. Destroying it only removes it from state: Thoth keeps registrations
+  with their decision history.
 
 ### Changed
 
@@ -40,15 +46,6 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 - `thoth_policy_exception.hold_token` is sensitive and write-only. Thoth no longer returns hold
   tokens from the exception API, since a hold token is a credential, so reads keep the
   configured value instead of planning a replacement.
-
-## 0.1.23 - 2026-10-25
-
-### Added
-
-- `thoth_agent` resource: registers an agent (`agent_id`, `display_name`, `owner_email`,
-  `approved_scope`) and reads back its `status`. It never sets the mode (`thoth_agent_enforcement`)
-  or changes a quarantine. Destroying it only removes it from state: Thoth keeps registrations
-  with their decision history.
 
 ## 0.1.22 - 2026-10-24
 
