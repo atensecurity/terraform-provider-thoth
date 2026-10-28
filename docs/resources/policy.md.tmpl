@@ -1,0 +1,39 @@
+---
+page_title: "thoth_policy Resource"
+subcategory: "Governance"
+description: |-
+  A policy rule in dev or prod. A rule created with a key that is not an org admin's waits for an org admin's approval.
+---
+
+# thoth_policy
+
+```terraform
+resource "thoth_policy" "hold_deletes" {
+  environment = "dev"
+  name        = "Hold deletes"
+  type        = "scope"
+  enforcement = "review"
+  applied_to  = ["all"]
+
+  rules_json = jsonencode({
+    conditions = {
+      action_class = ["delete"]
+    }
+  })
+}
+```
+
+A rule lives in one environment. Changing `environment` replaces it; to move a dev rule to
+prod, promote it with the configuration preview (`preview_policy_rule`) or the API.
+
+With an org admin's key a new rule starts active. Otherwise it starts `pending` until an org admin
+approves it, and `status` shows that; Terraform never approves a rule. `enabled = false` turns a
+rule off, and turning it back on needs an org admin's key.
+
+Import with `environment/policy_id`:
+
+```shell
+terraform import thoth_policy.hold_deletes dev/6ae1441907c1c31e7e44ca5a
+```
+
+{{ .SchemaMarkdown | trimspace }}

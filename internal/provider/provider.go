@@ -404,6 +404,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewEndpointAPIKeyResource,
 		resources.NewAgentAPIKeyResource,
 		resources.NewFleetResource,
+		resources.NewPolicyResource,
 		resources.NewEndpointResource,
 		resources.NewWebhookTestResource,
 		resources.NewEvidenceBackfillResource,

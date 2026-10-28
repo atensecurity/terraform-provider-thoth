@@ -6,6 +6,11 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ### Added
 
+- `thoth_policy` resource: a policy rule in dev or prod, with its type, enforcement,
+  `applied_to` and conditions (`rules_json`). A rule created with a key that is not an org admin's
+  starts pending until an org admin approves it; `status` shows that and Terraform never approves.
+  `enabled = false` turns a rule off. Changing `environment` replaces the rule. Import with
+  `environment/policy_id`.
 - `thoth_team_member` resource: invite a person, set their role and remove them, on self-serve,
   trial and dedicated workspaces.
 - `thoth_slack_approvals` resource: the Slack approvals channel and the reviewers who may approve
