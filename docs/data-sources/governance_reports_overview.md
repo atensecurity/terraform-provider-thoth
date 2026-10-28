@@ -21,4 +21,7 @@ Reads governance reports overview dashboard data for the tenant.
 
 ### Read-Only
 
+- `mcp_critical_deviation_alerts` (Number) Critical MCP deviation alerts in the reporting window.
+- `mcp_deviation_alerts` (Number) Total MCP deviation alerts in the reporting window.
+- `mcp_deviation_by_type_json` (String) MCP deviation counts grouped by type as JSON array.
 - `response_json` (String) Reports overview payload as JSON.

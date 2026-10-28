@@ -24,8 +24,16 @@ Manages tenant-scoped MCP vendor registry entries used for allowlist enforcement
 ### Optional
 
 - `approved` (Boolean) Whether this vendor is approved for pass-through MCP host access.
+- `capabilities` (List of String) Capability bindings this vendor/runtime identity is allowed to request.
+- `egress_allowed_host_patterns` (List of String) Allowed egress host patterns enforced for this vendor/runtime identity.
+- `egress_policy_mode` (String) Egress policy mode for vendor traffic (enforce or observe).
 - `last_seen_at` (String) Last observed timestamp (RFC3339) for this vendor in runtime traffic.
+- `manifest_signature_bundle_ref` (String) Signature bundle reference used for manifest verification.
+- `manifest_signature_signer` (String) Signer identity for verified manifest signatures.
+- `manifest_signature_status` (String) Manifest signature verification status (verified, pending, failed).
+- `manifest_signature_verified_at` (String) RFC3339 timestamp when manifest signature was verified.
 - `notes` (String) Optional reviewer notes for this vendor entry.
+- `runtime_identity` (String) Capability-scoped runtime identity used at action-time enforcement.
 - `source` (String) Vendor entry source (for example manual, discovered).
 
 ### Read-Only
