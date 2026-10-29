@@ -742,6 +742,23 @@ func (c *Client) ListEvidencePacks(ctx context.Context) (map[string]any, error) 
 	return out, err
 }
 
+// GetAgentObserveSummary reads what enforcing would have changed for an agent
+// in observe mode, with the Ready to enforce verdict. days 0 is the default (7).
+func (c *Client) GetAgentObserveSummary(ctx context.Context, agentID string, days int64) (map[string]any, error) {
+	normalized := strings.TrimSpace(agentID)
+	if normalized == "" {
+		return nil, errors.New("agent_id must be non-empty")
+	}
+	query := map[string]string{}
+	if days > 0 {
+		query["days"] = fmt.Sprintf("%d", days)
+	}
+	out := map[string]any{}
+	path := c.tenantPath(fmt.Sprintf("v1/agents/%s/observe-summary", url.PathEscape(normalized)))
+	err := c.doJSON(ctx, http.MethodGet, path, query, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) GetSessionForensics(ctx context.Context, sessionID string) (map[string]any, error) {
 	normalized := strings.TrimSpace(sessionID)
 	if normalized == "" {

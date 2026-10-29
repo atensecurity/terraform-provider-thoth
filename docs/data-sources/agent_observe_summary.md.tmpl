@@ -1,0 +1,32 @@
+---
+page_title: "thoth_agent_observe_summary Data Source"
+subcategory: "Governance"
+description: |-
+  What enforcing would have held or denied for an agent in observe mode, and whether it is ready to enforce.
+---
+
+# data source: thoth_agent_observe_summary
+
+```terraform
+data "thoth_agent_observe_summary" "billing" {
+  agent_id = "billing-agent"
+}
+
+# Refuse the switch to enforce until Thoth says the agent is ready.
+resource "thoth_agent_enforcement" "billing" {
+  agent_id         = "billing-agent"
+  enforcement_mode = "enforce"
+
+  lifecycle {
+    precondition {
+      condition = (data.thoth_agent_observe_summary.billing.ready_to_enforce ||
+      data.thoth_agent_observe_summary.billing.mode == "enforce")
+      error_message = data.thoth_agent_observe_summary.billing.next
+    }
+  }
+}
+```
+
+`ready_to_enforce` is true only while the agent is in observe, so once it enforces, the
+precondition holds on `mode`. Do not derive `enforcement_mode` from `ready_to_enforce`
+itself: the next plan would switch the agent back to observe.

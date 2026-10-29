@@ -440,6 +440,7 @@ func (p *thothProvider) DataSources(_ context.Context) []func() datasource.DataS
 		data_sources.NewEvidenceVerifyDataSource,
 		data_sources.NewEvidenceBundleDataSource,
 		data_sources.NewEvidencePacksDataSource,
+		data_sources.NewAgentObserveSummaryDataSource,
 		data_sources.NewSessionForensicsDataSource,
 		data_sources.NewIncidentForensicsDataSource,
 		data_sources.NewAgentLatestForensicsDataSource,

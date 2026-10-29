@@ -14,6 +14,10 @@ Needs the server from production v0.6.18 or later, which builds evidence packs.
   verify packs with `thothctl evidence pack download` and `thothctl evidence verify --pack`.
 - `thoth_evidence_packs` data source: the workspace's packs and their status, without part
   locations.
+- `thoth_agent_observe_summary` data source: what enforcing would have held or denied for an agent
+  in observe mode, and `ready_to_enforce` with each check (at least 7 days observed, at least 50
+  actions in the last 7 days, at most 2% held or denied, nothing denied in the last 3 days). Use it
+  in a precondition on `thoth_agent_enforcement`; Thoth never switches an agent itself.
 
 ## 0.1.23 - 2026-10-28
 
