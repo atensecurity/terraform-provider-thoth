@@ -727,6 +727,21 @@ func (c *Client) GetSessionEvidenceBundle(ctx context.Context, sessionID string)
 	return out, err
 }
 
+// CreateEvidencePack queues a signed evidence pack. Empty bounds mean the
+// previous calendar month. A 409 carries the workspace's pack in progress.
+func (c *Client) CreateEvidencePack(ctx context.Context, periodStart, periodEnd string) (map[string]any, error) {
+	out := map[string]any{}
+	body := map[string]string{"period_start": periodStart, "period_end": periodEnd}
+	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("evidence/packs"), nil, body, &out, false)
+	return out, err
+}
+
+func (c *Client) ListEvidencePacks(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("evidence/packs"), nil, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) GetSessionForensics(ctx context.Context, sessionID string) (map[string]any, error) {
 	normalized := strings.TrimSpace(sessionID)
 	if normalized == "" {

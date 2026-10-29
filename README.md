@@ -104,6 +104,7 @@ omit explicit auth fields.
 - `thoth_endpoint`
 - `thoth_webhook_test`
 - `thoth_evidence_backfill`
+- `thoth_evidence_pack`
 - `thoth_decision_field_backfill`
 - `thoth_policy_sync`
 - `thoth_policy_bundle`
@@ -156,6 +157,7 @@ and run in `enforce` mode. You can optionally scope assignments by:
 - `thoth_evidence_chain`
 - `thoth_evidence_verify`
 - `thoth_evidence_bundle`
+- `thoth_evidence_packs`
 - `thoth_session_forensics`
 - `thoth_incident_forensics`
 - `thoth_agent_latest_forensics`

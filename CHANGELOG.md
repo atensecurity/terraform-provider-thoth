@@ -2,6 +2,19 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+Needs the server from production v0.6.18 or later, which builds evidence packs.
+
+### Added
+
+- `thoth_evidence_pack` resource: queue a signed evidence pack for a period (the previous calendar
+  month by default; at most 31 days, already ended) and wait until it is built. A pack for the same
+  period already in progress is adopted. Destroying it only removes it from state; download and
+  verify packs with `thothctl evidence pack download` and `thothctl evidence verify --pack`.
+- `thoth_evidence_packs` data source: the workspace's packs and their status, without part
+  locations.
+
 ## 0.1.23 - 2026-10-28
 
 Version 0.1.23 was prepared on 25 October but never published; this release contains it and everything since. Needs the server from production v0.6.13 or later (deployed 28 October 2026) for `thoth_policy`, `thoth_team_member`, `thoth_slack_approvals`, `thoth_model_artifact` and `thoth_org_security_settings`.

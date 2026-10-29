@@ -1,0 +1,52 @@
+---
+page_title: "thoth_evidence_pack Resource"
+subcategory: "Governance"
+description: |-
+  Builds a signed evidence pack for a period.
+---
+
+# thoth_evidence_pack
+
+Queues a signed evidence pack for a period and, by default, waits until it is built. A pack holds
+the period's decision receipts and evidence-chain events with their signed bytes, the signing
+keys, and a partial AIUC-1 mapping, so it can be verified offline.
+
+## Example Usage
+
+```terraform
+resource "thoth_evidence_pack" "september" {
+  period_start = "2026-09-01T00:00:00Z"
+  period_end   = "2026-10-01T00:00:00Z"
+}
+
+output "september_pack" {
+  value = thoth_evidence_pack.september.id
+}
+```
+
+Then download and verify it offline:
+
+```bash
+thothctl evidence pack download --pack-id <id>
+thothctl evidence verify --pack <parts>
+```
+
+## How it behaves
+
+- Leave out both `period_start` and `period_end` for the previous calendar month. A period covers
+  at most 31 days and must already have ended.
+- A workspace builds one pack at a time. If a pack for the same period is already queued or
+  building, this resource adopts it; for another period, apply fails until that build finishes.
+- `wait_for_ready` (default true) waits up to `wait_timeout_minutes` (default 30). A failed build
+  is an error. If the wait times out, the pack is kept in state and keeps building; the next
+  refresh records the result.
+- A pack is evidence, not configuration. Change `trigger` or the period to build another.
+  Destroying the resource only removes it from state; the pack stays in Thoth.
+- Part locations are never in state. Download needs a paid plan, or a trial within its read-only
+  retention window.
+
+## Import
+
+```bash
+terraform import thoth_evidence_pack.september <pack_id>
+```

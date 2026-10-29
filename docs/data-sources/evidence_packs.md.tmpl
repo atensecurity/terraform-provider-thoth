@@ -1,0 +1,18 @@
+---
+page_title: "thoth_evidence_packs Data Source"
+subcategory: "Governance"
+description: |-
+  Lists the workspace's signed evidence packs.
+---
+
+# data source: thoth_evidence_packs
+
+```terraform
+data "thoth_evidence_packs" "ready" {
+  status = "ready"
+}
+
+output "latest_ready_pack" {
+  value = try(jsondecode(data.thoth_evidence_packs.ready.data_json)[0].pack_id, null)
+}
+```
