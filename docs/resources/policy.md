@@ -27,7 +27,7 @@ Manages a policy rule in one environment (dev or prod). A rule created with a ke
 - `applied_to` (List of String) Agent IDs the rule applies to, or ["all"] (the default).
 - `description` (String) Rule description.
 - `enabled` (Boolean) Whether the rule applies. Turning a rule on needs an org admin's key; a pending rule stays pending until approved.
-- `rules_json` (String) The rule's conditions as a JSON object, for example with jsonencode().
+- `rules_json` (String) What the rule matches, as a JSON object (for example with jsonencode()) with one of tool, tool_names, model_name, model_provider, purpose, data_classification, min_token_count or min_estimated_cost_usd, or the overlay keys blocked_tools and allowed_tools. A rule with none of these is refused, because Thoth would never apply it.
 
 ### Read-Only
 

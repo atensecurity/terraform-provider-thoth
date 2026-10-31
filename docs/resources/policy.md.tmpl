@@ -15,10 +15,9 @@ resource "thoth_policy" "hold_deletes" {
   enforcement = "review"
   applied_to  = ["all"]
 
+  # Hold every call to these tools for a person's approval.
   rules_json = jsonencode({
-    conditions = {
-      action_class = ["delete"]
-    }
+    tool_names = ["orders.delete", "customers.delete"]
   })
 }
 ```

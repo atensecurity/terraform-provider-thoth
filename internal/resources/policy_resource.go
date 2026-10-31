@@ -99,7 +99,7 @@ func (r *policyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"rules_json": schema.StringAttribute{
 				Optional:    true,
-				Description: "The rule's conditions as a JSON object, for example with jsonencode().",
+				Description: "What the rule matches, as a JSON object (for example with jsonencode()) with one of tool, tool_names, model_name, model_provider, purpose, data_classification, min_token_count or min_estimated_cost_usd, or the overlay keys blocked_tools and allowed_tools. A rule with none of these is refused, because Thoth would never apply it.",
 			},
 			"enabled": schema.BoolAttribute{
 				Optional:    true,
