@@ -11,5 +11,8 @@ description: |-
 resource "thoth_agent_enforcement" "billing" {
   agent_id         = "billing-agent"
   enforcement_mode = "observe" # observe | enforce
+  # After a person declines one of its held actions:
+  # after_decline         = "raise" # raise (default) | stop | quarantine
+  # after_decline_minutes = 30      # with raise: 5 to 1440
 }
 ```

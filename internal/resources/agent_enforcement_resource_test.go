@@ -25,12 +25,20 @@ func (a *agentEnforcementAPI) handler(t *testing.T) http.Handler {
 		}
 		a.mu.Lock()
 		defer a.mu.Unlock()
-		current := map[string]any{"agent_id": "billing/agent", "enforcement_mode": "enforce", "high_risk_action": "hold"}
+		current := map[string]any{"agent_id": "billing/agent", "enforcement_mode": "enforce", "high_risk_action": "hold", "after_decline": "raise", "after_decline_minutes": 30}
 		if r.Method == http.MethodPut {
 			body := map[string]any{}
 			_ = json.NewDecoder(r.Body).Decode(&body)
 			a.puts = append(a.puts, body)
 			current["enforcement_mode"], current["high_risk_action"] = body["enforcement_mode"], body["high_risk_action"]
+			// As govapi answers: minutes only with raise.
+			if value, ok := body["after_decline"]; ok {
+				current["after_decline"] = value
+				delete(current, "after_decline_minutes")
+				if minutes, ok := body["after_decline_minutes"]; ok {
+					current["after_decline_minutes"] = minutes
+				}
+			}
 		}
 		_ = json.NewEncoder(w).Encode(current)
 	})
@@ -52,6 +60,7 @@ func TestAgentEnforcementApplyEscapesTheAgentAndSendsBothChoices(t *testing.T) {
 	r := newAgentEnforcementResource(t, api)
 	got, err := r.apply(context.Background(), agentEnforcementModel{
 		AgentID: types.StringValue("billing/agent"), EnforcementMode: types.StringValue("observe"), HighRiskAction: types.StringValue("hold"),
+		AfterDecline: types.StringValue("raise"), AfterDeclineMin: types.Int64Value(30),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -68,5 +77,45 @@ func TestAgentEnforcementFlattenDefaultsToEnforce(t *testing.T) {
 	got := flattenAgentEnforcement(map[string]any{}, "agent")
 	if got.EnforcementMode.ValueString() != "enforce" || got.HighRiskAction.ValueString() != "hold" {
 		t.Fatalf("empty responses read as enforce/hold, got %+v", got)
+	}
+}
+
+func TestAgentEnforcementSendsAfterDecline(t *testing.T) {
+	api := &agentEnforcementAPI{}
+	r := newAgentEnforcementResource(t, api)
+	got, err := r.apply(context.Background(), agentEnforcementModel{
+		AgentID: types.StringValue("billing/agent"), EnforcementMode: types.StringValue("enforce"), HighRiskAction: types.StringValue("hold"),
+		AfterDecline: types.StringValue("raise"), AfterDeclineMin: types.Int64Value(45),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if api.puts[0]["after_decline"] != "raise" || api.puts[0]["after_decline_minutes"] != float64(45) {
+		t.Fatalf("unexpected request %+v", api.puts[0])
+	}
+	if got.AfterDecline.ValueString() != "raise" || got.AfterDeclineMin.ValueInt64() != 45 {
+		t.Fatalf("unexpected state %+v", got)
+	}
+
+	// Stop and quarantine send no minutes, and the plan's value is kept.
+	got, err = r.apply(context.Background(), agentEnforcementModel{
+		AgentID: types.StringValue("billing/agent"), EnforcementMode: types.StringValue("enforce"), HighRiskAction: types.StringValue("hold"),
+		AfterDecline: types.StringValue("stop"), AfterDeclineMin: types.Int64Value(30),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, sent := api.puts[1]["after_decline_minutes"]; sent || api.puts[1]["after_decline"] != "stop" {
+		t.Fatalf("unexpected request %+v", api.puts[1])
+	}
+	if got.AfterDecline.ValueString() != "stop" || got.AfterDeclineMin.ValueInt64() != 30 {
+		t.Fatalf("unexpected state %+v", got)
+	}
+}
+
+func TestAgentEnforcementFlattenDefaultsToRaise(t *testing.T) {
+	got := flattenAgentEnforcement(map[string]any{}, "agent")
+	if got.AfterDecline.ValueString() != "raise" || got.AfterDeclineMin.ValueInt64() != 30 {
+		t.Fatalf("empty responses read as raise for 30 minutes, got %+v", got)
 	}
 }

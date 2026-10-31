@@ -17,6 +17,9 @@ resource "thoth_agent_enforcement" "billing" {
   agent_id         = "billing-agent"
   enforcement_mode = "observe" # observe | enforce
   # high_risk_action = "deny"  # hold (default) | deny
+  # After a person declines one of its held actions:
+  # after_decline         = "raise" # raise (default) | stop | quarantine
+  # after_decline_minutes = 30      # with raise: 5 to 1440
 }
 ```
 
@@ -30,6 +33,8 @@ resource "thoth_agent_enforcement" "billing" {
 
 ### Optional
 
+- `after_decline` (String) What a person declining one of this agent's held actions does. `raise` (default): its next actions of the same kind need approval for `after_decline_minutes`, in every session. `stop`: the session the declined action was in is isolated until a person releases it. `quarantine`: the agent is quarantined. A policy deny quarantines the agent whatever this says.
+- `after_decline_minutes` (Number) With `after_decline` set to `raise`, how long the agent's same-kind actions need approval: 5 to 1440 minutes (default 30). Ignored for `stop` and `quarantine`.
 - `high_risk_action` (String) While enforcing, what a high model risk score does: `hold` the action for approval (default) or `deny` it. Rules decide either way; a score can only make a decision stricter.
 
 ### Read-Only

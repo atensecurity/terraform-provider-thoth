@@ -18,6 +18,11 @@ Needs the server from production v0.6.18 or later, which builds evidence packs.
   in observe mode, and `ready_to_enforce` with each check (at least 7 days observed, at least 50
   actions in the last 7 days, at most 2% held or denied, nothing denied in the last 3 days). Use it
   in a precondition on `thoth_agent_enforcement`; Thoth never switches an agent itself.
+- `thoth_agent_enforcement` gains `after_decline` (`raise`, the default; `stop`; or `quarantine`)
+  and `after_decline_minutes` (5 to 1440, default 30): what a person declining one of the agent's
+  held actions does. With `raise`, the agent's next actions of the same kind need approval for that
+  long, in every session. Needs the server with the after-decline setting (the release after
+  v0.6.28). Destroying the resource returns it to `raise` for 30 minutes.
 
 ## 0.1.23 - 2026-10-28
 

@@ -863,10 +863,19 @@ func (c *Client) RegisterAgent(ctx context.Context, agentID, displayName, ownerE
 	return out, err
 }
 
-// UpdateAgentEnforcement sets an agent's enforcement mode.
-func (c *Client) UpdateAgentEnforcement(ctx context.Context, agentID, mode, highRiskAction string) (map[string]any, error) {
+// UpdateAgentEnforcement sets an agent's enforcement mode and, when
+// afterDecline is set, what a person declining one of its held actions does
+// (raise, stop or quarantine). minutes is sent only with raise; an empty
+// afterDecline leaves the stored setting unchanged.
+func (c *Client) UpdateAgentEnforcement(ctx context.Context, agentID, mode, highRiskAction, afterDecline string, minutes int64) (map[string]any, error) {
 	out := map[string]any{}
 	payload := map[string]any{"enforcement_mode": mode, "high_risk_action": highRiskAction}
+	if afterDecline != "" {
+		payload["after_decline"] = afterDecline
+		if afterDecline == "raise" && minutes != 0 {
+			payload["after_decline_minutes"] = minutes
+		}
+	}
 	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("agents/"+url.PathEscape(agentID)+"/enforcement-mode"), nil, payload, &out, false)
 	return out, err
 }

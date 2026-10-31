@@ -80,7 +80,7 @@ func assertParity(t *testing.T, want parityRequest, got *parityRequest) {
 func TestParityAgentEnforcementMode(t *testing.T) {
 	want := loadParityTerraform(t, "agent_enforcement_mode")
 	c, got := captureRequest(t)
-	if _, err := c.UpdateAgentEnforcement(context.Background(), "agent-a", "enforce", "deny"); err != nil {
+	if _, err := c.UpdateAgentEnforcement(context.Background(), "agent-a", "enforce", "deny", "", 0); err != nil {
 		t.Fatal(err)
 	}
 	assertParity(t, want, got)
