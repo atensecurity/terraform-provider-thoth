@@ -1,0 +1,17 @@
+---
+page_title: "thoth_recipient_policy Resource"
+subcategory: "Settings"
+description: |-
+  Whether sends, shares and invitations addressed outside the workspace step up for approval.
+---
+
+# thoth_recipient_policy
+
+```terraform
+resource "thoth_recipient_policy" "this" {
+  mode                     = "enforce"           # off | observe | enforce
+  internal_domains         = ["acme.example"]    # empty: the workspace's sign-in domains
+  allowed_external_domains = ["partner.example"] # plain sends only; forwards and shares still step up
+  allowed_destinations     = ["patient-portal"]  # named destinations that are not addresses
+}
+```

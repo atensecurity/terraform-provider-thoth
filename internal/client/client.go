@@ -902,6 +902,26 @@ func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts 
 	return out, err
 }
 
+// GetRecipientPolicy reads the outside-recipient guard's setting.
+func (c *Client) GetRecipientPolicy(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("settings/recipient-policy"), nil, nil, &out, true)
+	return out, err
+}
+
+// UpdateRecipientPolicy sets the guard's mode and lists; each list replaces the stored one.
+func (c *Client) UpdateRecipientPolicy(ctx context.Context, mode string, internalDomains, allowedExternalDomains, allowedDestinations []string) (map[string]any, error) {
+	out := map[string]any{}
+	payload := map[string]any{
+		"mode":                     mode,
+		"internal_domains":         internalDomains,
+		"allowed_external_domains": allowedExternalDomains,
+		"allowed_destinations":     allowedDestinations,
+	}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("settings/recipient-policy"), nil, payload, &out, false)
+	return out, err
+}
+
 func (c *Client) ListBillingInvoices(ctx context.Context, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
 	err := c.doJSON(ctx, http.MethodGet, c.billingPath("invoices"), query, nil, &out, true)

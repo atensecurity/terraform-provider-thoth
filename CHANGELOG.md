@@ -8,6 +8,13 @@ Needs the server from production v0.6.18 or later, which builds evidence packs.
 
 ### Added
 
+- `thoth_recipient_policy` resource: the outside-recipient guard. `mode` is `observe` (the
+  default: Thoth records what it would hold), `enforce` (sends, shares and invitations addressed
+  outside the workspace step up for approval) or `off`. `internal_domains` default to the
+  workspace's sign-in domains; `allowed_external_domains` cover plain sends to customers and
+  partners, never forwards, shares or exports; `allowed_destinations` names non-address targets
+  such as `patient-portal`. Destroying the resource restores the defaults. Needs a Thoth API with
+  the recipient-policy endpoint.
 - `thoth_evidence_pack` resource: queue a signed evidence pack for a period (the previous calendar
   month by default; at most 31 days, already ended) and wait until it is built. A pack for the same
   period already in progress is adopted. Destroying it only removes it from state; download and

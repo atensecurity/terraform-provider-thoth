@@ -381,6 +381,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 	return []func() resource.Resource{
 		resources.NewBillingOverageCapResource,
 		resources.NewDataHandlingResource,
+		resources.NewRecipientPolicyResource,
 		resources.NewSIEMDecisionStreamResource,
 		resources.NewAgentEnforcementResource,
 		resources.NewAgentResource,
