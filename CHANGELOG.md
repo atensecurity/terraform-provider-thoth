@@ -4,7 +4,8 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 
 ## Unreleased
 
-Needs the server from production v0.6.18 or later, which builds evidence packs.
+Needs the server from production v0.6.32 or later, which adds the recipient-policy endpoint
+(evidence packs need v0.6.18 or later, and `after_decline` needs v0.6.29 or later).
 
 ### Added
 
@@ -13,8 +14,8 @@ Needs the server from production v0.6.18 or later, which builds evidence packs.
   outside the workspace step up for approval) or `off`. `internal_domains` default to the
   workspace's sign-in domains; `allowed_external_domains` cover plain sends to customers and
   partners, never forwards, shares or exports; `allowed_destinations` names non-address targets
-  such as `patient-portal`. Destroying the resource restores the defaults. Needs a Thoth API with
-  the recipient-policy endpoint.
+  such as `patient-portal`. Destroying the resource restores the defaults. Needs the server from
+  production v0.6.32 or later.
 - `thoth_evidence_pack` resource: queue a signed evidence pack for a period (the previous calendar
   month by default; at most 31 days, already ended) and wait until it is built. A pack for the same
   period already in progress is adopted. Destroying it only removes it from state; download and
@@ -30,6 +31,17 @@ Needs the server from production v0.6.18 or later, which builds evidence packs.
   held actions does. With `raise`, the agent's next actions of the same kind need approval for that
   long, in every session. Needs the server from production
   v0.6.29 or later. Destroying the resource returns it to `raise` for 30 minutes.
+
+### Changed
+
+- Registering an agent (`thoth_agent`) needs an admin on every workspace, not only on the shared
+  runtime. Setting `enforcement_mode` while registering also needs a recent second factor when
+  the provider acts as a person (`use_thothctl_session`); API keys are exempt, as for
+  `thoth_agent_enforcement`. This is enforced by the server from production v0.6.31 or later.
+
+### Security
+
+- Updated `golang.org/x/net` to v0.62.0, a security update.
 
 ## 0.1.23 - 2026-10-28
 
