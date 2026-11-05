@@ -95,6 +95,15 @@ func TestParityDataHandling(t *testing.T) {
 	assertParity(t, want, got)
 }
 
+func TestParityRecipientPolicy(t *testing.T) {
+	want := loadParityTerraform(t, "recipient_policy")
+	c, got := captureRequest(t)
+	if _, err := c.UpdateRecipientPolicy(context.Background(), "enforce", []string{"acme.com"}, []string{"partner.example"}, []string{"patient-portal"}); err != nil {
+		t.Fatal(err)
+	}
+	assertParity(t, want, got)
+}
+
 func TestParitySIEMDecisionStream(t *testing.T) {
 	want := loadParityTerraform(t, "siem_decision_stream")
 	c, got := captureRequest(t)
