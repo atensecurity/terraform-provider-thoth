@@ -2,7 +2,7 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
-## Unreleased
+## 0.1.24 - 2026-11-05
 
 Needs the server from production v0.6.32 or later, which adds the recipient-policy endpoint
 (evidence packs need v0.6.18 or later, and `after_decline` needs v0.6.29 or later).
