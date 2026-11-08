@@ -2,6 +2,20 @@
 
 All notable changes to `terraform-provider-thoth` are documented in this file.
 
+## Unreleased
+
+Needs a server that stores the three new fields; an older server ignores them, so a non-default value
+would show as drift.
+
+### Added
+
+- `thoth_data_handling` gains `accept_local_scan` (default `false`), `accepted_scanner_ruleset_hashes`
+  (lower-case sha256 hex, at most 20, default none) and `require_client_findings` (default `false`).
+  They configure how Thoth treats what a client's own scan reports about argument values the client
+  withheld. A report is used only when the workspace accepts local scans and the scanner's ruleset hash
+  is on the list, only for the checks it says it ran, and it can only add holds. The report is
+  client-asserted, and nothing sends one yet. Destroying the resource turns all three off.
+
 ## 0.1.24 - 2026-11-05
 
 Needs the server from production v0.6.32 or later, which adds the recipient-policy endpoint

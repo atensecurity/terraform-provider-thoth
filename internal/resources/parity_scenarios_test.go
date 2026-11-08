@@ -89,7 +89,7 @@ func TestParityAgentEnforcementMode(t *testing.T) {
 func TestParityDataHandling(t *testing.T) {
 	want := loadParityTerraform(t, "data_handling")
 	c, got := captureRequest(t)
-	if _, err := c.UpdateDataHandling(context.Background(), "redact", "hash"); err != nil {
+	if _, err := c.UpdateDataHandling(context.Background(), "redact", "hash", false, []string{}, false); err != nil {
 		t.Fatal(err)
 	}
 	assertParity(t, want, got)

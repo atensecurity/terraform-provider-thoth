@@ -24,7 +24,10 @@ resource "thoth_data_handling" "this" {
 
 ### Optional
 
+- `accept_local_scan` (Boolean) Whether Thoth relies on what a client's local scan reports about the argument values it withheld (`client_findings`). Even then a report is used only for the checks it says it ran, from a scanner whose ruleset hash is in `accepted_scanner_ruleset_hashes`, and it can only add holds, never remove one. The report is client-asserted. Default `false`.
+- `accepted_scanner_ruleset_hashes` (List of String) Scanner rulesets whose reports Thoth may rely on, as lower-case sha256 hex hashes (at most 20). Has no effect unless `accept_local_scan` is true. Default: none.
 - `prompts` (String) Prompts, model output and tool results: `store`, `hash` the whole text with a workspace-keyed HMAC, or `drop`. Default `drop`.
+- `require_client_findings` (Boolean) Hold a client that withheld argument values and did not report what its local scan found for a check that applies (reason `findings_missing`). In observe mode the hold is recorded, not applied. Default `false`.
 - `tool_arguments` (String) Tool arguments: `store` as sent, `hash` each value with a workspace-keyed HMAC (argument names kept), `redact` each value to its type, or `drop`. Default `hash`.
 
 ### Read-Only

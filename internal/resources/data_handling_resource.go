@@ -3,12 +3,17 @@ package resources
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -25,6 +30,9 @@ const (
 	dataHandlingDefaultPrompts       = "drop"
 )
 
+// A scanner ruleset is identified by the lower-case sha256 hex of its contents.
+var dataHandlingRulesetHashPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
 var _ resource.Resource = &dataHandlingResource{}
 var _ resource.ResourceWithImportState = &dataHandlingResource{}
 
@@ -38,6 +46,10 @@ type dataHandlingModel struct {
 	TenantID      types.String `tfsdk:"tenant_id"`
 	ToolArguments types.String `tfsdk:"tool_arguments"`
 	Prompts       types.String `tfsdk:"prompts"`
+
+	AcceptLocalScan              types.Bool `tfsdk:"accept_local_scan"`
+	AcceptedScannerRulesetHashes types.List `tfsdk:"accepted_scanner_ruleset_hashes"`
+	RequireClientFindings        types.Bool `tfsdk:"require_client_findings"`
 }
 
 func NewDataHandlingResource() resource.Resource {
@@ -79,6 +91,36 @@ func (r *dataHandlingResource) Schema(_ context.Context, _ resource.SchemaReques
 					"workspace-keyed HMAC, or `drop`. Default `drop`.",
 				Validators: []validator.String{stringvalidator.OneOf("store", "hash", "drop")},
 			},
+			"accept_local_scan": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+				Description: "Whether Thoth relies on what a client's local scan reports about the argument values it " +
+					"withheld (`client_findings`). Even then a report is used only for the checks it says it ran, from a " +
+					"scanner whose ruleset hash is in `accepted_scanner_ruleset_hashes`, and it can only add holds, never " +
+					"remove one. The report is client-asserted. Default `false`.",
+			},
+			"accepted_scanner_ruleset_hashes": schema.ListAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Computed:    true,
+				Default:     listdefault.StaticValue(recipientEmptyList()),
+				Description: "Scanner rulesets whose reports Thoth may rely on, as lower-case sha256 hex hashes (at most 20). " +
+					"Has no effect unless `accept_local_scan` is true. Default: none.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(20),
+					listvalidator.UniqueValues(),
+					listvalidator.ValueStringsAre(stringvalidator.RegexMatches(dataHandlingRulesetHashPattern, "must be 64 lowercase hexadecimal characters (sha256)")),
+				},
+			},
+			"require_client_findings": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+				Description: "Hold a client that withheld argument values and did not report what its local scan found for " +
+					"a check that applies (reason `findings_missing`). In observe mode the hold is recorded, not applied. " +
+					"Default `false`.",
+			},
 		},
 	}
 }
@@ -98,7 +140,7 @@ func (r *dataHandlingResource) Create(ctx context.Context, req resource.CreateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	next, err := r.apply(ctx, plan.ToolArguments.ValueString(), plan.Prompts.ValueString())
+	next, err := r.applyPlan(ctx, plan, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Error setting data handling", err.Error())
 		return
@@ -122,7 +164,7 @@ func (r *dataHandlingResource) Update(ctx context.Context, req resource.UpdateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	next, err := r.apply(ctx, plan.ToolArguments.ValueString(), plan.Prompts.ValueString())
+	next, err := r.applyPlan(ctx, plan, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating data handling", err.Error())
 		return
@@ -133,7 +175,7 @@ func (r *dataHandlingResource) Update(ctx context.Context, req resource.UpdateRe
 // Delete returns the workspace to the private defaults rather than leaving
 // whatever Terraform last set.
 func (r *dataHandlingResource) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if _, err := r.client.UpdateDataHandling(ctx, dataHandlingDefaultToolArguments, dataHandlingDefaultPrompts); err != nil {
+	if _, err := r.client.UpdateDataHandling(ctx, dataHandlingDefaultToolArguments, dataHandlingDefaultPrompts, false, []string{}, false); err != nil {
 		resp.Diagnostics.AddError("Error restoring default data handling", err.Error())
 	}
 }
@@ -153,8 +195,16 @@ func (r *dataHandlingResource) ImportState(ctx context.Context, req resource.Imp
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), r.tenantID)...)
 }
 
-func (r *dataHandlingResource) apply(ctx context.Context, toolArguments, prompts string) (dataHandlingModel, error) {
-	out, err := r.client.UpdateDataHandling(ctx, toolArguments, prompts)
+func (r *dataHandlingResource) applyPlan(ctx context.Context, plan dataHandlingModel, diags *diag.Diagnostics) (dataHandlingModel, error) {
+	hashes := recipientListStrings(ctx, plan.AcceptedScannerRulesetHashes, diags)
+	if diags.HasError() {
+		return dataHandlingModel{}, fmt.Errorf("invalid accepted_scanner_ruleset_hashes")
+	}
+	return r.apply(ctx, plan.ToolArguments.ValueString(), plan.Prompts.ValueString(), plan.AcceptLocalScan.ValueBool(), hashes, plan.RequireClientFindings.ValueBool())
+}
+
+func (r *dataHandlingResource) apply(ctx context.Context, toolArguments, prompts string, acceptLocalScan bool, rulesetHashes []string, requireClientFindings bool) (dataHandlingModel, error) {
+	out, err := r.client.UpdateDataHandling(ctx, toolArguments, prompts, acceptLocalScan, rulesetHashes, requireClientFindings)
 	if err != nil {
 		return dataHandlingModel{}, err
 	}
@@ -175,5 +225,15 @@ func flattenDataHandling(out map[string]any, tenantID string) dataHandlingModel 
 		TenantID:      types.StringValue(tenantID),
 		ToolArguments: types.StringValue(args),
 		Prompts:       types.StringValue(prompts),
+
+		AcceptLocalScan:              types.BoolValue(responseBool(out, "accept_local_scan")),
+		AcceptedScannerRulesetHashes: recipientListFrom(out["accepted_scanner_ruleset_hashes"]),
+		RequireClientFindings:        types.BoolValue(responseBool(out, "require_client_findings")),
 	}
+}
+
+// responseBool reads a boolean field; a missing or mistyped one is false, as the server reads it.
+func responseBool(out map[string]any, key string) bool {
+	value, _ := out[key].(bool)
+	return value
 }
