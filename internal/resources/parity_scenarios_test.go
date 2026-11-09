@@ -95,6 +95,15 @@ func TestParityDataHandling(t *testing.T) {
 	assertParity(t, want, got)
 }
 
+func TestParityDataHandlingLocalScan(t *testing.T) {
+	want := loadParityTerraform(t, "data_handling_local_scan")
+	c, got := captureRequest(t)
+	if _, err := c.UpdateDataHandling(context.Background(), "hash", "drop", true, []string{"db797fde60f300719b9dac8a360efd6ce8b1f7313587cc714aebf7a93428434b"}, true); err != nil {
+		t.Fatal(err)
+	}
+	assertParity(t, want, got)
+}
+
 func TestParityRecipientPolicy(t *testing.T) {
 	want := loadParityTerraform(t, "recipient_policy")
 	c, got := captureRequest(t)
