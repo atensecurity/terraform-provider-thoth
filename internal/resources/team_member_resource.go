@@ -100,7 +100,7 @@ func requirePerson(c *client.Client, diags *diag.Diagnostics) bool {
 		return true
 	}
 	diags.AddError("Needs a signed-in admin",
-		"People and Slack reviewers are changed by a signed-in admin, not an API key. Run `thothctl auth login`, "+
+		"People, Slack reviewers and approvers are changed by a signed-in admin, not an API key. Run `thothctl auth login`, "+
 			"set use_thothctl_session = true in the provider, and apply again.")
 	return false
 }

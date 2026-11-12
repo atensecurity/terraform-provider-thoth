@@ -145,3 +145,22 @@ func objectList(raw any, key string) []map[string]any {
 	}
 	return out
 }
+
+// TenantApprovers is the list of WorkOS users who may resolve held actions on a
+// workspace without Slack: user_ids, updated_by, updated_at and revision.
+func (c *Client) TenantApprovers(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("settings/approvers"), nil, nil, &out, true)
+	return out, err
+}
+
+// SetTenantApprovers replaces the whole list. revision is the value last read;
+// the server answers 409 when someone saved in between. It returns the saved list.
+func (c *Client) SetTenantApprovers(ctx context.Context, revision int64, userIDs []string) (map[string]any, error) {
+	if userIDs == nil {
+		userIDs = []string{}
+	}
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("settings/approvers"), nil, map[string]any{"revision": revision, "user_ids": userIDs}, &out, false)
+	return out, err
+}

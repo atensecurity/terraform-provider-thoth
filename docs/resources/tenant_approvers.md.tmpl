@@ -1,0 +1,14 @@
+---
+page_title: "thoth_tenant_approvers Resource"
+subcategory: "People"
+description: |-
+  Who may approve held actions on a workspace without Slack.
+---
+
+# thoth_tenant_approvers
+
+```terraform
+resource "thoth_tenant_approvers" "this" {
+  user_ids = ["user_01HABCDEF", "user_01HGHIJKL"]
+}
+```

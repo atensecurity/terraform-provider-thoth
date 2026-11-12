@@ -393,6 +393,7 @@ func (p *thothProvider) Resources(_ context.Context) []func() resource.Resource 
 		resources.NewModelArtifactResource,
 		resources.NewTeamMemberResource,
 		resources.NewSlackApprovalsResource,
+		resources.NewTenantApproversResource,
 		resources.NewMDMProviderResource,
 		resources.NewMDMSyncResource,
 		resources.NewBrowserProviderResource,

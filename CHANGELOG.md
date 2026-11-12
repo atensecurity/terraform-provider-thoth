@@ -9,6 +9,13 @@ would show as drift.
 
 ### Added
 
+- `thoth_tenant_approvers` resource: who may approve held actions on a workspace with no Slack
+  workspace connected, such as a dedicated deployment. `user_ids` is a set of WorkOS user IDs (at most
+  50, each a verified, active organization member); `revision`, `updated_by` and `updated_at` are
+  read-only. Saving sends the revision it read, so a concurrent change is refused instead of
+  overwritten. Needs `use_thothctl_session` or an admin bearer token: an API key is refused with the
+  fix. Destroying it saves an empty list, so nobody can approve until a new list is set. Import by
+  tenant ID. Needs a server that serves `settings/approvers`.
 - `thoth_data_handling` gains `accept_local_scan` (default `false`), `accepted_scanner_ruleset_hashes`
   (lower-case sha256 hex, at most 20, default none) and `require_client_findings` (default `false`).
   They configure how Thoth treats what a client's own scan reports about argument values the client
