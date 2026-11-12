@@ -120,7 +120,7 @@ func (r *agentResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		resp.Diagnostics.AddError("Error reading agent", err.Error())
 		return
 	}
-	next := flattenAgent(out, state.AgentID.ValueString(), state.OwnerEmail)
+	next := flattenAgent(out, state.AgentID.ValueString(), state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
 }
 
@@ -175,23 +175,42 @@ func (r *agentResource) apply(ctx context.Context, plan agentModel) (agentModel,
 	if err != nil {
 		return agentModel{}, err
 	}
-	return flattenAgent(out, agentID, plan.OwnerEmail), nil
+	return flattenAgent(out, agentID, plan), nil
 }
 
 // flattenAgent maps the agent record. owner_email keeps null when it is unset
 // in configuration and Thoth stored it empty.
-func flattenAgent(out map[string]any, agentID string, configuredOwner types.String) agentModel {
-	scope := tfhelpers.GetStringSlice(out, "approved_scope")
-	sort.Strings(scope)
-	values := make([]attr.Value, 0, len(scope))
-	for _, s := range scope {
-		values = append(values, types.StringValue(s))
+//
+// A Thoth release before November 2026 returned only the activity fields from
+// GET /agents/{id} (no display_name, owner_email or approved_scope), so a key
+// that is absent from the record keeps the prior value (the plan, or the
+// state on refresh) instead of being replaced by an empty one, which made
+// Terraform fail the apply as an inconsistent result. A key that is present
+// is always authoritative, so drift is still detected.
+func flattenAgent(out map[string]any, agentID string, prior agentModel) agentModel {
+	_, hasScope := out["approved_scope"]
+	var scopeValue types.Set
+	if !hasScope && !prior.ApprovedScope.IsNull() && !prior.ApprovedScope.IsUnknown() {
+		scopeValue = prior.ApprovedScope
+	} else {
+		scope := tfhelpers.GetStringSlice(out, "approved_scope")
+		sort.Strings(scope)
+		values := make([]attr.Value, 0, len(scope))
+		for _, s := range scope {
+			values = append(values, types.StringValue(s))
+		}
+		scopeValue = types.SetValueMust(types.StringType, values)
 	}
 	owner := types.StringNull()
-	if stored := tfhelpers.GetString(out, "owner_email"); stored != "" || !configuredOwner.IsNull() {
+	if _, has := out["owner_email"]; !has && !prior.OwnerEmail.IsUnknown() {
+		owner = prior.OwnerEmail
+	} else if stored := tfhelpers.GetString(out, "owner_email"); stored != "" || !prior.OwnerEmail.IsNull() {
 		owner = types.StringValue(stored)
 	}
 	displayName := tfhelpers.GetString(out, "display_name")
+	if _, has := out["display_name"]; !has && !prior.DisplayName.IsNull() && !prior.DisplayName.IsUnknown() && prior.DisplayName.ValueString() != "" {
+		displayName = prior.DisplayName.ValueString()
+	}
 	if displayName == "" {
 		displayName = agentID
 	}
@@ -200,7 +219,7 @@ func flattenAgent(out map[string]any, agentID string, configuredOwner types.Stri
 		AgentID:       types.StringValue(agentID),
 		DisplayName:   types.StringValue(displayName),
 		OwnerEmail:    owner,
-		ApprovedScope: types.SetValueMust(types.StringType, values),
+		ApprovedScope: scopeValue,
 		Status:        types.StringValue(tfhelpers.GetString(out, "status")),
 	}
 }

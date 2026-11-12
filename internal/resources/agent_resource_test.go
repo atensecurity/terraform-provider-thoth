@@ -85,8 +85,58 @@ func TestAgentRegistersWithoutAModeAndReadsBack(t *testing.T) {
 }
 
 func TestAgentFlattenKeepsAnUnsetOwnerNull(t *testing.T) {
-	got := flattenAgent(map[string]any{"display_name": "", "owner_email": ""}, "agent", types.StringNull())
+	got := flattenAgent(map[string]any{"display_name": "", "owner_email": ""}, "agent", agentModel{OwnerEmail: types.StringNull()})
 	if !got.OwnerEmail.IsNull() || got.DisplayName.ValueString() != "agent" {
 		t.Fatalf("expected null owner and the agent ID as name, got %+v", got)
+	}
+}
+
+// govapi before November 2026 answered GET /agents/{id} with activity fields
+// only. This is that response, exactly as ThothAgentDetail serialised it for
+// a fresh agent with no events. The apply must still match the plan.
+func TestAgentApplyAgainstAGetWithoutRegistrationFields(t *testing.T) {
+	var puts int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPut:
+			puts++
+			_ = json.NewEncoder(w).Encode(map[string]any{"agent_id": "clinic-scheduler", "display_name": "Clinic scheduler (AgentCore reference)", "registered": true})
+		case http.MethodGet:
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"agent_id": "clinic-scheduler", "last_seen": "0001-01-01T00:00:00Z", "total_calls": 0,
+				"session_count": 0, "violations_24h": 0, "enforcement_mode": "enforce", "status": "active",
+			})
+		}
+	}))
+	t.Cleanup(server.Close)
+	c, err := client.New(client.Config{BaseURL: server.URL, TenantID: "trantor", APIKey: "test-key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &agentResource{client: c}
+	scope := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("read_schedule"), types.StringValue("book_appointment")})
+	plan := agentModel{
+		AgentID: types.StringValue("clinic-scheduler"), DisplayName: types.StringValue("Clinic scheduler (AgentCore reference)"),
+		OwnerEmail: types.StringValue("n@atensecurity.com"), ApprovedScope: scope,
+	}
+	got, err := r.apply(context.Background(), plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DisplayName != plan.DisplayName || got.OwnerEmail != plan.OwnerEmail || !got.ApprovedScope.Equal(scope) {
+		t.Fatalf("applied state differs from the plan: %+v", got)
+	}
+}
+
+// When Thoth does return the registration, it is authoritative: drift shows.
+func TestAgentFlattenTakesStoredRegistrationOverState(t *testing.T) {
+	prior := agentModel{
+		DisplayName: types.StringValue("old"), OwnerEmail: types.StringValue("old@example.com"),
+		ApprovedScope: types.SetValueMust(types.StringType, []attr.Value{types.StringValue("a")}),
+	}
+	got := flattenAgent(map[string]any{"display_name": "new", "owner_email": "new@example.com", "approved_scope": []any{"b"}}, "agent", prior)
+	if got.DisplayName.ValueString() != "new" || got.OwnerEmail.ValueString() != "new@example.com" ||
+		!got.ApprovedScope.Equal(types.SetValueMust(types.StringType, []attr.Value{types.StringValue("b")})) {
+		t.Fatalf("stored values must win: %+v", got)
 	}
 }

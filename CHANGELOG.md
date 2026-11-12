@@ -16,6 +16,13 @@ would show as drift.
   is on the list, only for the checks it says it ran, and it can only add holds. The report is
   client-asserted, and nothing sends one yet. Destroying the resource turns all three off.
 
+### Fixed
+
+- `thoth_agent` no longer fails after apply with "Provider produced inconsistent result" for
+  `display_name`, `owner_email` and `approved_scope`. Thoth's agent read now returns the registration
+  it stored; against a server that does not yet, the provider keeps the planned values for the keys the
+  read omits instead of replacing them with empty ones. Values the server does return still show drift.
+
 ## 0.1.24 - 2026-11-05
 
 Needs the server from production v0.6.32 or later, which adds the recipient-policy endpoint
