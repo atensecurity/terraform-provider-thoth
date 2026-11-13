@@ -170,3 +170,32 @@ func TestParityOrgSecuritySettings(t *testing.T) {
 	r.apply(context.Background(), plan, &diags)
 	assertParity(t, want, got)
 }
+
+// The approver list is chosen by a signed-in admin, and a create reads the
+// revision first (0 on a workspace that never had a list) before it saves the
+// whole list. So the replay runs the resource's create as a signed-in user
+// against the recording approversAPI and checks the save it sent.
+func TestParityTenantApprovers(t *testing.T) {
+	want := loadParityTerraform(t, "tenant_approvers")
+	api := newApproversAPI("user_a", "user_b")
+	// The plan is a set; its order is not the scenario's.
+	if _, diags := applyApprovers(approversResource(t, api, false), "user_b", "user_a"); diags.HasError() {
+		t.Fatal(diags)
+	}
+	if len(api.bodies) != 1 || len(api.calls) < 2 {
+		t.Fatalf("one read then one save, got calls %v bodies %v", api.calls, api.bodies)
+	}
+	if api.calls[0] != "GET /"+approversTenant+"/thoth/settings/approvers" {
+		t.Fatalf("the revision is read first: %v", api.calls)
+	}
+	method, path, _ := strings.Cut(api.calls[1], " ")
+	// assertParity names tenant-a; the approvers fake serves its own tenant.
+	if method != want.Method || path != "/"+approversTenant+"/"+want.Path {
+		t.Fatalf("request %s %s, want %s /%s/%s", method, path, want.Method, approversTenant, want.Path)
+	}
+	wantJSON, _ := json.Marshal(want.Body)
+	gotJSON, _ := json.Marshal(api.bodies[0])
+	if string(wantJSON) != string(gotJSON) {
+		t.Fatalf("body %s, want %s", gotJSON, wantJSON)
+	}
+}
