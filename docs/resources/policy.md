@@ -25,6 +25,7 @@ Manages a policy rule in one environment (dev or prod). A rule created with a ke
 ### Optional
 
 - `applied_to` (List of String) Agent IDs the rule applies to, or ["all"] (the default).
+- `argument_conditions` (Attributes List) Numeric checks on the call's arguments, all of which must hold, together with the tool match in rules_json (tool or tool_names). At most 5. A review or block rule fails closed: a call that leaves the argument out matches (set when_missing to "no_match" to opt out), and a value that is present but not a plain number, or a key that differs from the argument only in case or separators (Amount for amount), holds the call for review. The rule depends on the exact argument name; synonyms such as amt are not recognised. (see [below for nested schema](#nestedatt--argument_conditions))
 - `description` (String) Rule description.
 - `enabled` (Boolean) Whether the rule applies. Turning a rule on needs an org admin's key; a pending rule stays pending until approved.
 - `rules_json` (String) What the rule matches, as a JSON object (for example with jsonencode()) with one of tool, tool_names, model_name, model_provider, purpose, data_classification, min_token_count or min_estimated_cost_usd, or the overlay keys blocked_tools and allowed_tools. A rule with none of these is refused, because Thoth would never apply it.
@@ -37,3 +38,16 @@ Manages a policy rule in one environment (dev or prod). A rule created with a ke
 - `status` (String) pending, active, disabled or rejected.
 - `tenant_id` (String) Tenant ID from provider configuration.
 - `updated_at` (String) Last update timestamp.
+
+<a id="nestedatt--argument_conditions"></a>
+### Nested Schema for `argument_conditions`
+
+Required:
+
+- `argument` (String) An argument name or a dotted path of at most 4 names (expense.amount). Names are letters, digits, _ and -, starting with a letter. Case matters.
+- `operator` (String) gt, gte, lt, lte or eq.
+- `value` (Number) The number to compare against: finite, between -1e15 and 1e15.
+
+Optional:
+
+- `when_missing` (String) match or no_match: whether a call that leaves this argument out matches. Unset, a review or block rule matches it (fail closed). A present value that is not a plain number holds the call for review whatever this says.

@@ -9,6 +9,14 @@ would show as drift.
 
 ### Added
 
+- `thoth_policy` gains `argument_conditions`: up to five numeric checks on a tool's arguments, ANDed
+  with the tool match in `rules_json`, for example hold `approve_expense` when `amount` is over 100.
+  Each is `argument` (a name or dotted path), `operator` (`gt`, `gte`, `lt`, `lte`, `eq`), `value`
+  and an optional `when_missing`. A review or block rule fails closed: a call that omits the
+  argument matches, a value that is not a plain number or a key spelled differently (`Amount`) holds
+  the call for review. They can equally be written under `argument_conditions` in `rules_json`, but
+  not both. Needs a server that applies them (an older one holds the tool for every call).
+
 - `thoth_tenant_approvers` resource: who may approve held actions on a workspace with no Slack
   workspace connected, such as a dedicated deployment. `user_ids` is a set of WorkOS user IDs (at most
   50, each a verified, active organization member); `revision`, `updated_by` and `updated_at` are
