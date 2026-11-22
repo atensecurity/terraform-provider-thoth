@@ -9,6 +9,10 @@ would show as drift.
 
 ### Added
 
+- `thoth_data_handling` gains `locked` (default `false`): a one-way lock for a workspace that handles
+  protected health information. Locked, arguments and prompts are never kept as sent, and the lock
+  cannot be lifted through Terraform or the API. `terraform destroy` leaves a locked workspace
+  unchanged and warns. Needs a server that stores the field.
 - `thoth_policy` gains `argument_conditions`: up to five numeric checks on a tool's arguments, ANDed
   with the tool match in `rules_json`, for example hold `approve_expense` when `amount` is over 100.
   Each is `argument` (a name or dotted path), `operator` (`gt`, `gte`, `lt`, `lte`, `eq`), `value`

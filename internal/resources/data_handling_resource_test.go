@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/atensecurity/terraform-provider-thoth/internal/client"
@@ -22,6 +23,8 @@ import (
 type dataHandlingAPI struct {
 	mu   sync.Mutex
 	puts []map[string]any
+	// locked makes the server behave as a workspace that is already locked.
+	locked bool
 }
 
 func (a *dataHandlingAPI) handler(t *testing.T) http.Handler {
@@ -39,6 +42,9 @@ func (a *dataHandlingAPI) handler(t *testing.T) http.Handler {
 			_ = json.NewDecoder(r.Body).Decode(&body)
 			a.puts = append(a.puts, body)
 			current = stored(body)
+			if a.locked {
+				current["locked"] = true
+			}
 		} else if n := len(a.puts); n > 0 {
 			current = stored(a.puts[n-1])
 		}
@@ -50,6 +56,7 @@ func stored(body map[string]any) map[string]any {
 	return map[string]any{
 		"tool_arguments": body["tool_arguments"], "prompts": body["prompts"], "default": false,
 		"accept_local_scan": body["accept_local_scan"], "accepted_scanner_ruleset_hashes": body["accepted_scanner_ruleset_hashes"], "require_client_findings": body["require_client_findings"],
+		"locked": body["locked"] == true,
 	}
 }
 
@@ -68,7 +75,7 @@ func TestDataHandlingApplySendsBothChoices(t *testing.T) {
 	api := &dataHandlingAPI{}
 	r := newDataHandlingResource(t, api)
 
-	got, err := r.apply(context.Background(), "store", "hash", false, []string{}, false)
+	got, err := r.apply(context.Background(), "store", "hash", false, []string{}, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,12 +90,12 @@ func TestDataHandlingApplySendsBothChoices(t *testing.T) {
 func TestDataHandlingDestroyRestoresThePrivateDefaults(t *testing.T) {
 	api := &dataHandlingAPI{}
 	r := newDataHandlingResource(t, api)
-	if _, err := r.apply(context.Background(), "store", "store", true, []string{"abababababababababababababababababababababababababababababababab"}, true); err != nil {
+	if _, err := r.apply(context.Background(), "store", "store", true, []string{"abababababababababababababababababababababababababababababababab"}, true, false); err != nil {
 		t.Fatal(err)
 	}
 
 	resp := &resource.DeleteResponse{}
-	r.Delete(context.Background(), resource.DeleteRequest{}, resp)
+	r.Delete(context.Background(), resource.DeleteRequest{State: dataHandlingState(t, r, false)}, resp)
 	if resp.Diagnostics.HasError() {
 		t.Fatalf("delete failed: %v", resp.Diagnostics)
 	}
@@ -117,7 +124,7 @@ func TestDataHandlingApplySendsTheLocalScanChoices(t *testing.T) {
 	r := newDataHandlingResource(t, api)
 	hash := strings.Repeat("ab", 32)
 
-	got, err := r.apply(context.Background(), "drop", "drop", true, []string{hash}, true)
+	got, err := r.apply(context.Background(), "drop", "drop", true, []string{hash}, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,4 +154,62 @@ func TestDataHandlingSchemaRejectsMalformedHashes(t *testing.T) {
 			t.Fatalf("hash %q: valid=%v, want %v", value, ok, valid)
 		}
 	}
+}
+
+func TestDataHandlingApplySendsLockedOnlyWhenTrue(t *testing.T) {
+	api := &dataHandlingAPI{}
+	r := newDataHandlingResource(t, api)
+
+	if _, err := r.apply(context.Background(), "hash", "drop", false, []string{}, false, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, sent := api.puts[0]["locked"]; sent {
+		t.Fatalf("an unlocked configuration must not send locked, sent %+v", api.puts[0])
+	}
+
+	got, err := r.apply(context.Background(), "redact", "drop", false, []string{}, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if api.puts[1]["locked"] != true || !got.Locked.ValueBool() {
+		t.Fatalf("a locked configuration sends locked = true and reads it back, sent %+v state %+v", api.puts[1], got)
+	}
+}
+
+func TestDataHandlingApplyRefusesToReportAnUnlockedStateForALockedWorkspace(t *testing.T) {
+	api := &dataHandlingAPI{locked: true}
+	r := newDataHandlingResource(t, api)
+	_, err := r.apply(context.Background(), "hash", "drop", false, []string{}, false, false)
+	if err == nil || !strings.Contains(err.Error(), "locked") {
+		t.Fatalf("a configuration without locked = true must fail on a locked workspace, got %v", err)
+	}
+}
+
+func TestDataHandlingDestroyLeavesALockedWorkspaceAlone(t *testing.T) {
+	api := &dataHandlingAPI{}
+	r := newDataHandlingResource(t, api)
+	resp := &resource.DeleteResponse{}
+	r.Delete(context.Background(), resource.DeleteRequest{State: dataHandlingState(t, r, true)}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("delete failed: %v", resp.Diagnostics)
+	}
+	if len(api.puts) != 0 {
+		t.Fatalf("destroy must not change a locked workspace, sent %+v", api.puts)
+	}
+	if resp.Diagnostics.WarningsCount() != 1 {
+		t.Fatalf("destroy should warn that the lock stays, got %v", resp.Diagnostics)
+	}
+}
+
+// dataHandlingState is a state the way Terraform holds it after an apply.
+func dataHandlingState(t *testing.T, r *dataHandlingResource, locked bool) tfsdk.State {
+	t.Helper()
+	var schemaResp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	model := flattenDataHandling(map[string]any{"tool_arguments": "redact", "prompts": "drop", "locked": locked}, "tenant-a")
+	if diags := state.Set(context.Background(), &model); diags.HasError() {
+		t.Fatal(diags)
+	}
+	return state
 }

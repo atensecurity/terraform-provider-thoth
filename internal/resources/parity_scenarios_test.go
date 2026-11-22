@@ -89,7 +89,7 @@ func TestParityAgentEnforcementMode(t *testing.T) {
 func TestParityDataHandling(t *testing.T) {
 	want := loadParityTerraform(t, "data_handling")
 	c, got := captureRequest(t)
-	if _, err := c.UpdateDataHandling(context.Background(), "redact", "hash", false, []string{}, false); err != nil {
+	if _, err := c.UpdateDataHandling(context.Background(), "redact", "hash", false, []string{}, false, false); err != nil {
 		t.Fatal(err)
 	}
 	assertParity(t, want, got)
@@ -98,7 +98,7 @@ func TestParityDataHandling(t *testing.T) {
 func TestParityDataHandlingLocalScan(t *testing.T) {
 	want := loadParityTerraform(t, "data_handling_local_scan")
 	c, got := captureRequest(t)
-	if _, err := c.UpdateDataHandling(context.Background(), "hash", "drop", true, []string{"db797fde60f300719b9dac8a360efd6ce8b1f7313587cc714aebf7a93428434b"}, true); err != nil {
+	if _, err := c.UpdateDataHandling(context.Background(), "hash", "drop", true, []string{"db797fde60f300719b9dac8a360efd6ce8b1f7313587cc714aebf7a93428434b"}, true, false); err != nil {
 		t.Fatal(err)
 	}
 	assertParity(t, want, got)
@@ -198,4 +198,13 @@ func TestParityTenantApprovers(t *testing.T) {
 	if string(wantJSON) != string(gotJSON) {
 		t.Fatalf("body %s, want %s", gotJSON, wantJSON)
 	}
+}
+
+func TestParityDataHandlingLock(t *testing.T) {
+	want := loadParityTerraform(t, "data_handling_lock")
+	c, got := captureRequest(t)
+	if _, err := c.UpdateDataHandling(context.Background(), "redact", "drop", false, []string{}, false, true); err != nil {
+		t.Fatal(err)
+	}
+	assertParity(t, want, got)
 }

@@ -50,6 +50,7 @@ type dataHandlingModel struct {
 	AcceptLocalScan              types.Bool `tfsdk:"accept_local_scan"`
 	AcceptedScannerRulesetHashes types.List `tfsdk:"accepted_scanner_ruleset_hashes"`
 	RequireClientFindings        types.Bool `tfsdk:"require_client_findings"`
+	Locked                       types.Bool `tfsdk:"locked"`
 }
 
 func NewDataHandlingResource() resource.Resource {
@@ -121,6 +122,16 @@ func (r *dataHandlingResource) Schema(_ context.Context, _ resource.SchemaReques
 					"a check that applies (reason `findings_missing`). In observe mode the hold is recorded, not applied. " +
 					"Default `false`.",
 			},
+			"locked": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+				Description: "Lock this workspace's data handling for protected health information. Locked, `tool_arguments` can " +
+					"never be `store` and `prompts` can never be `store`, and the lock cannot be lifted through Terraform, " +
+					"the API or the assistant: contact Aten support. Once the workspace is locked, keep `locked = true` in " +
+					"your configuration; `terraform destroy` stops managing the setting and leaves it locked. A lock limits " +
+					"what Thoth keeps; it does not detect or remove personal data in what a client sends. Default `false`.",
+			},
 		},
 	}
 }
@@ -173,9 +184,17 @@ func (r *dataHandlingResource) Update(ctx context.Context, req resource.UpdateRe
 }
 
 // Delete returns the workspace to the private defaults rather than leaving
-// whatever Terraform last set.
-func (r *dataHandlingResource) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if _, err := r.client.UpdateDataHandling(ctx, dataHandlingDefaultToolArguments, dataHandlingDefaultPrompts, false, []string{}, false); err != nil {
+// whatever Terraform last set. A locked workspace stays as it is: the lock
+// cannot be lifted here, so Terraform only stops managing it.
+func (r *dataHandlingResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var locked types.Bool
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("locked"), &locked)...)
+	if locked.ValueBool() {
+		resp.Diagnostics.AddWarning("Data handling stays locked",
+			"This workspace's data handling is locked, and a lock cannot be lifted through Terraform. Terraform has stopped managing it; the settings are unchanged. Contact Aten support to lift the lock.")
+		return
+	}
+	if _, err := r.client.UpdateDataHandling(ctx, dataHandlingDefaultToolArguments, dataHandlingDefaultPrompts, false, []string{}, false, false); err != nil {
 		resp.Diagnostics.AddError("Error restoring default data handling", err.Error())
 	}
 }
@@ -200,13 +219,19 @@ func (r *dataHandlingResource) applyPlan(ctx context.Context, plan dataHandlingM
 	if diags.HasError() {
 		return dataHandlingModel{}, fmt.Errorf("invalid accepted_scanner_ruleset_hashes")
 	}
-	return r.apply(ctx, plan.ToolArguments.ValueString(), plan.Prompts.ValueString(), plan.AcceptLocalScan.ValueBool(), hashes, plan.RequireClientFindings.ValueBool())
+	return r.apply(ctx, plan.ToolArguments.ValueString(), plan.Prompts.ValueString(), plan.AcceptLocalScan.ValueBool(), hashes, plan.RequireClientFindings.ValueBool(), plan.Locked.ValueBool())
 }
 
-func (r *dataHandlingResource) apply(ctx context.Context, toolArguments, prompts string, acceptLocalScan bool, rulesetHashes []string, requireClientFindings bool) (dataHandlingModel, error) {
-	out, err := r.client.UpdateDataHandling(ctx, toolArguments, prompts, acceptLocalScan, rulesetHashes, requireClientFindings)
+func (r *dataHandlingResource) apply(ctx context.Context, toolArguments, prompts string, acceptLocalScan bool, rulesetHashes []string, requireClientFindings, locked bool) (dataHandlingModel, error) {
+	out, err := r.client.UpdateDataHandling(ctx, toolArguments, prompts, acceptLocalScan, rulesetHashes, requireClientFindings, locked)
 	if err != nil {
 		return dataHandlingModel{}, err
+	}
+	// The request never sends locked = false, so a workspace that is already
+	// locked would silently come back locked; say so rather than report a
+	// state that differs from the plan.
+	if !locked && responseBool(out, "locked") {
+		return dataHandlingModel{}, fmt.Errorf("this workspace's data handling is locked and cannot be unlocked here; set locked = true in the configuration, or contact Aten support")
 	}
 	return flattenDataHandling(out, r.tenantID), nil
 }
@@ -229,6 +254,7 @@ func flattenDataHandling(out map[string]any, tenantID string) dataHandlingModel 
 		AcceptLocalScan:              types.BoolValue(responseBool(out, "accept_local_scan")),
 		AcceptedScannerRulesetHashes: recipientListFrom(out["accepted_scanner_ruleset_hashes"]),
 		RequireClientFindings:        types.BoolValue(responseBool(out, "require_client_findings")),
+		Locked:                       types.BoolValue(responseBool(out, "locked")),
 	}
 }
 

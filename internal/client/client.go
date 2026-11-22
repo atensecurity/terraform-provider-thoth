@@ -895,7 +895,7 @@ func (c *Client) UpdateSIEMDecisionStream(ctx context.Context, enabled bool, dec
 	return out, err
 }
 
-func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts string, acceptLocalScan bool, acceptedScannerRulesetHashes []string, requireClientFindings bool) (map[string]any, error) {
+func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts string, acceptLocalScan bool, acceptedScannerRulesetHashes []string, requireClientFindings, locked bool) (map[string]any, error) {
 	out := map[string]any{}
 	payload := map[string]any{
 		"tool_arguments":                  toolArguments,
@@ -903,6 +903,11 @@ func (c *Client) UpdateDataHandling(ctx context.Context, toolArguments, prompts 
 		"accept_local_scan":               acceptLocalScan,
 		"accepted_scanner_ruleset_hashes": acceptedScannerRulesetHashes,
 		"require_client_findings":         requireClientFindings,
+	}
+	// Only ever send locked = true: the lock is one way, and a request that
+	// says false is refused on a workspace that is already locked.
+	if locked {
+		payload["locked"] = true
 	}
 	err := c.doJSON(ctx, http.MethodPut, c.tenantPath("settings/data-handling"), nil, payload, &out, false)
 	return out, err
