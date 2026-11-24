@@ -1,0 +1,53 @@
+---
+page_title: "thoth_tool_inventory Data Source"
+subcategory: "Governance"
+description: |-
+  The workspace's tools with Thoth's advisory recommendation for each: risk, suggested classes and a suggested decision.
+---
+
+# data source: thoth_tool_inventory
+
+Reads the workspace's tool inventory with a recommendation for each tool: risk flags, a risk
+level, suggested action classes, a suggested decision (`STEP_UP` or `BLOCK`; `ALLOW` only for a
+tool an admin has already declared `read`), the reasons, and a draft policy rule. It includes
+tools seen only in recorded decisions, such as Claude Code or Claude Desktop traffic that
+reaches Thoth through the hook, so their names appear without anyone listing them.
+
+It is read-only and writes nothing. Declare classes with `thoth_tool_classification` and commit a
+rule through the previewed policy flow (`thothctl policy` or the MCP `preview_policy_rule`).
+
+```terraform
+data "thoth_tool_inventory" "metabase" {
+  server               = "metabase"
+  needs_classification = true
+}
+
+locals {
+  tools = jsondecode(data.thoth_tool_inventory.metabase.data_json)
+}
+
+# Review what Thoth recommends; nothing is declared until you write it down.
+output "tools_to_review" {
+  value = [for t in local.tools : {
+    tool     = t.tool_name
+    risk     = try(t.recommendation.risk_level, null)
+    decision = try(t.recommendation.recommended_decision, null)
+    classes  = try(t.recommendation.recommended_classes, [])
+  }]
+}
+```
+
+## Limits
+
+- Recommendations are advisory. They come from tool names, reported schemas and observed
+  decisions, all written by agents or tool authors and so untrusted. They can raise a
+  recommendation's caution but never lower it, and they are never an allow-list.
+- A tool that reads as read-only by its own name or annotations stays `STEP_UP`. `ALLOW` is
+  recommended only after an admin declares the tool `read`.
+- A tool seen only through the hook has no description or schema: its recommendation rests on its
+  name and observed decisions.
+- The draft rule matches the tool by name. Its `action_class` condition applies once the
+  tool's classes are declared and the enforcer evaluates by class.
+- A tool's reported description, input schema and annotations are left out of `data_json`.
+- Recommendations need an admin credential. With another, `recommendations_available` is false
+  and tools carry none.

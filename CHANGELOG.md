@@ -9,6 +9,12 @@ would show as drift.
 
 ### Added
 
+- `thoth_tool_inventory` data source: the workspace's tools with Thoth's advisory recommendation for each
+  (risk flags and level, suggested classes, a suggested `STEP_UP` or `BLOCK`, the reasons and a draft rule),
+  including tools seen only in recorded decisions such as Claude Code traffic. Read-only: it writes no
+  class, rule or decision. Filter with `server` or `needs_classification`. A tool's reported description,
+  schema and annotations are left out of `data_json`. Recommendations need an admin credential and a
+  server that returns them.
 - `thoth_governance_settings`: `secret_broker_auth_bindings_json` documents and round-trips a binding's
   `id`, `agent_ids` and `tools` (limit a binding to named agents and tools; with neither it applies
   to every agent and tool on its host). The server's normalization of the JSON (lower-cased hosts,

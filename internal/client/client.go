@@ -759,6 +759,15 @@ func (c *Client) GetAgentObserveSummary(ctx context.Context, agentID string, day
 	return out, err
 }
 
+// GetToolInventory reads the workspace's tool inventory. Workspace admins also
+// get, per tool, advisory recommendations; nothing it returns writes a class,
+// a rule or a decision.
+func (c *Client) GetToolInventory(ctx context.Context) (map[string]any, error) {
+	out := map[string]any{}
+	err := c.doJSON(ctx, http.MethodGet, c.tenantPath("tool-inventory"), nil, nil, &out, true)
+	return out, err
+}
+
 func (c *Client) GetSessionForensics(ctx context.Context, sessionID string) (map[string]any, error) {
 	normalized := strings.TrimSpace(sessionID)
 	if normalized == "" {
