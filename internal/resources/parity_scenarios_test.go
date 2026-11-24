@@ -157,6 +157,25 @@ func TestParityToolDeclaration(t *testing.T) {
 	}
 }
 
+func TestParitySecretBroker(t *testing.T) {
+	want := loadParityTerraform(t, "secret_broker")
+	c, got := captureRequest(t)
+	r := &governanceSettingsResource{client: c, tenantID: "tenant-a"}
+	var diags diag.Diagnostics
+	plan := governanceSettingsModel{
+		SecretBrokerEnabled:          types.BoolValue(true),
+		SecretBrokerProvider:         types.StringValue("adapter"),
+		SecretBrokerStrictEndpoint:   types.BoolValue(true),
+		SecretBrokerAllowedHosts:     types.ListValueMust(types.StringType, []attr.Value{types.StringValue("api.example.com")}),
+		SecretBrokerAuthBindingsJSON: types.StringValue(`[{"id":"crm","host_pattern":"api.example.com","header":"Authorization","secret_ref":"adapter://crm","prefix":"Bearer ","agent_ids":["crm-agent"],"tools":["crm.read"]}]`),
+	}
+	r.apply(context.Background(), plan, governanceSettingsModel{}, &diags)
+	if diags.HasError() {
+		t.Fatal(diags)
+	}
+	assertParity(t, want, got)
+}
+
 func TestParityOrgSecuritySettings(t *testing.T) {
 	want := loadParityTerraform(t, "org_security_settings")
 	c, got := captureRequest(t)

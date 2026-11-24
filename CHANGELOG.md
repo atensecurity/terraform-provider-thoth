@@ -9,6 +9,12 @@ would show as drift.
 
 ### Added
 
+- `thoth_governance_settings`: `secret_broker_auth_bindings_json` documents and round-trips a binding's
+  `id`, `agent_ids` and `tools` (limit a binding to named agents and tools; with neither it applies
+  to every agent and tool on its host). The server's normalization of the JSON (lower-cased hosts,
+  sorted and de-duplicated lists) is no longer reported as an inconsistent result. A prefix keeps its
+  trailing space. `secret_broker_fail_on_missing_secret` is sent only when set. Needs a server with
+  binding scopes.
 - `thoth_data_handling` gains `locked` (default `false`): a one-way lock for a workspace that handles
   protected health information. Locked, arguments and prompts are never kept as sent, and the lock
   cannot be lifted through Terraform or the API. `terraform destroy` leaves a locked workspace

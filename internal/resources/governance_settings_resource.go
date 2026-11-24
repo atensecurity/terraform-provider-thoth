@@ -2,7 +2,9 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -85,9 +87,9 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"secret_broker_enabled":                schema.BoolAttribute{Optional: true, Description: "Enable secret broker policy enforcement."},
 			"secret_broker_provider":               schema.StringAttribute{Optional: true, Computed: true, Description: "Secret broker provider slug."},
 			"secret_broker_strict_endpoint_mode":   schema.BoolAttribute{Optional: true, Description: "Require endpoint registration for secret resolution."},
-			"secret_broker_fail_on_missing_secret": schema.BoolAttribute{Optional: true, Description: "Fail governed calls when referenced secret is unavailable."},
+			"secret_broker_fail_on_missing_secret": schema.BoolAttribute{Optional: true, Description: "Fail governed calls when a referenced secret is unavailable. Leave it unset for the proxy default, which refuses the call when the broker is on. A false here is stored, but the proxy ignores a workspace false: only THOTH_SECRET_BROKER_FAIL_ON_MISSING_SECRET=false on the machine turns fail-closed off."},
 			"secret_broker_allowed_hosts":          schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Allowed host patterns for secret broker."},
-			"secret_broker_auth_bindings_json":     schema.StringAttribute{Optional: true, Description: "JSON array of auth binding objects (host_pattern, header, secret_ref, prefix)."},
+			"secret_broker_auth_bindings_json":     schema.StringAttribute{Optional: true, Description: "JSON array of auth binding objects. Each has host_pattern, header, secret_ref (a reference to a stored secret, never the credential) and prefix (keep any trailing space, for example \"Bearer \"). A binding may also have id (a stable label for audit records) and agent_ids and tools (lists that limit the binding to those agents and tools; with neither, it applies to every agent and tool on its host)."},
 			"model_router_enabled":                 schema.BoolAttribute{Optional: true, Computed: true, Description: "Enable model routing policy controls."},
 			"model_router_default_provider":        schema.StringAttribute{Optional: true, Computed: true, Description: "Default model provider."},
 			"model_router_default_model":           schema.StringAttribute{Optional: true, Computed: true, Description: "Default model name."},
@@ -339,7 +341,7 @@ func flattenGovernanceSettings(apiPayload map[string]any, current governanceSett
 	state.SecretBrokerStrictEndpoint = types.BoolValue(tfhelpers.GetBool(secretBroker, "strict_endpoint_mode"))
 	state.SecretBrokerFailOnMissing = types.BoolValue(tfhelpers.GetBool(secretBroker, "fail_on_missing_secret"))
 	state.SecretBrokerAllowedHosts = tfhelpers.StringSliceValue(tfhelpers.GetStringSlice(secretBroker, "allowed_hosts"))
-	state.SecretBrokerAuthBindingsJSON = types.StringValue(tfhelpers.ToJSONArrayString(secretBroker["auth_bindings"]))
+	state.SecretBrokerAuthBindingsJSON = keepEquivalentBindingsJSON(current.SecretBrokerAuthBindingsJSON, tfhelpers.ToJSONArrayString(secretBroker["auth_bindings"]))
 
 	if rawModelRouter, exists := apiPayload["model_router"]; exists && rawModelRouter != nil {
 		modelRouter := tfhelpers.GetMap(apiPayload, "model_router")
@@ -392,6 +394,78 @@ func flattenGovernanceSettings(apiPayload map[string]any, current governanceSett
 	flattenComplianceSettings(apiPayload, &state)
 	state.UpdatedAt = stringValueFromMap(apiPayload, "updated_at")
 	return state
+}
+
+// keepEquivalentBindingsJSON returns the configured text when it says what the
+// server stored, so the server's normalization (lower-cased hosts, sorted and
+// de-duplicated agent_ids and tools, key order) is not reported as drift or as
+// an inconsistent result after apply. Anything else returns what the server has.
+func keepEquivalentBindingsJSON(configured types.String, stored string) types.String {
+	if !configured.IsNull() && !configured.IsUnknown() &&
+		normalizeBindingsJSON(configured.ValueString()) == normalizeBindingsJSON(stored) {
+		return configured
+	}
+	return types.StringValue(stored)
+}
+
+// normalizeBindingsJSON applies the server's normalization of auth bindings to
+// a JSON array. Text that is not a JSON array of objects is returned unchanged.
+func normalizeBindingsJSON(raw string) string {
+	rows, err := tfhelpers.ParseJSONArray(raw)
+	if err != nil {
+		return raw
+	}
+	list := func(value any) []string {
+		items, _ := value.([]any)
+		seen := map[string]bool{}
+		out := []string{}
+		for _, item := range items {
+			text, ok := item.(string)
+			if !ok {
+				continue
+			}
+			text = strings.ToLower(strings.TrimSpace(text))
+			if text != "" && !seen[text] {
+				seen[text] = true
+				out = append(out, text)
+			}
+		}
+		sort.Strings(out)
+		return out
+	}
+	out := make([]any, 0, len(rows))
+	for _, row := range rows {
+		norm := map[string]any{}
+		for key, value := range row {
+			norm[key] = value
+		}
+		text := func(key string) string { s, _ := row[key].(string); return strings.TrimSpace(s) }
+		norm["host_pattern"] = strings.ToLower(text("host_pattern"))
+		norm["header"] = text("header")
+		norm["secret_ref"] = text("secret_ref")
+		prefix, _ := row["prefix"].(string)
+		norm["prefix"] = strings.TrimLeft(prefix, " \t")
+		for _, key := range []string{"id"} {
+			if v := text(key); v != "" {
+				norm[key] = v
+			} else {
+				delete(norm, key)
+			}
+		}
+		for _, key := range []string{"agent_ids", "tools"} {
+			if values := list(row[key]); len(values) > 0 {
+				norm[key] = values
+			} else {
+				delete(norm, key)
+			}
+		}
+		out = append(out, norm)
+	}
+	data, err := json.Marshal(out)
+	if err != nil {
+		return raw
+	}
+	return string(data)
 }
 
 func canonicalSecretBrokerProvider(raw string) string {
