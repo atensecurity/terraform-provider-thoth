@@ -89,7 +89,7 @@ func (r *governanceSettingsResource) Schema(_ context.Context, _ resource.Schema
 			"secret_broker_strict_endpoint_mode":   schema.BoolAttribute{Optional: true, Description: "Require endpoint registration for secret resolution."},
 			"secret_broker_fail_on_missing_secret": schema.BoolAttribute{Optional: true, Description: "Fail governed calls when a referenced secret is unavailable. Leave it unset for the proxy default, which refuses the call when the broker is on. A false here is stored, but the proxy ignores a workspace false: only THOTH_SECRET_BROKER_FAIL_ON_MISSING_SECRET=false on the machine turns fail-closed off."},
 			"secret_broker_allowed_hosts":          schema.ListAttribute{Optional: true, ElementType: types.StringType, Description: "Allowed host patterns for secret broker."},
-			"secret_broker_auth_bindings_json":     schema.StringAttribute{Optional: true, Description: "JSON array of auth binding objects. Each has host_pattern, header, secret_ref (a reference to a stored secret, never the credential) and prefix (keep any trailing space, for example \"Bearer \"). A binding may also have id (a stable label for audit records) and agent_ids and tools (lists that limit the binding to those agents and tools; with neither, it applies to every agent and tool on its host)."},
+			"secret_broker_auth_bindings_json":     schema.StringAttribute{Optional: true, Description: "JSON array of auth binding objects. Each has host_pattern, header, secret_ref (a reference to a stored secret, never the credential) and prefix (keep any trailing space, for example \"Bearer \"). A binding may also have id (a stable label for audit records), agent_ids and tools (lists that limit the binding to those agents and tools; with neither, it applies to every agent and tool on its host) and upstream (the MCP gateway upstream the binding is for: a gateway is released a binding only when its agent_ids and tools are explicit and its upstream equals the request's upstream)."},
 			"model_router_enabled":                 schema.BoolAttribute{Optional: true, Computed: true, Description: "Enable model routing policy controls."},
 			"model_router_default_provider":        schema.StringAttribute{Optional: true, Computed: true, Description: "Default model provider."},
 			"model_router_default_model":           schema.StringAttribute{Optional: true, Computed: true, Description: "Default model name."},
@@ -445,7 +445,7 @@ func normalizeBindingsJSON(raw string) string {
 		norm["secret_ref"] = text("secret_ref")
 		prefix, _ := row["prefix"].(string)
 		norm["prefix"] = strings.TrimLeft(prefix, " \t")
-		for _, key := range []string{"id"} {
+		for _, key := range []string{"id", "upstream"} {
 			if v := text(key); v != "" {
 				norm[key] = v
 			} else {

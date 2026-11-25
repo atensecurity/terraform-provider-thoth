@@ -83,7 +83,9 @@ resource "thoth_governance_settings" "broker" {
 }
 ```
 
-A binding with no `agent_ids` or `tools` applies to every agent and tool on its host. A binding
+A binding with no `agent_ids` or `tools` applies to every agent and tool on its host. An MCP gateway
+is released a binding only if it also sets `upstream` (the gateway upstream's name: letters, digits, `-` or `_`,
+no `__`) equal to the request's upstream, and lists `agent_ids` and `tools` explicitly. A binding
 with either is released only to a request that names a matching agent and tool. The server
 lower-cases hosts and sorts and de-duplicates `agent_ids` and `tools`; the configured text is kept
 in state when it says the same thing. Fields of the stored settings that this resource does not
@@ -107,7 +109,7 @@ default (refuse when the broker is on). The proxy ignores a workspace `false`; o
 - `model_router_failover_providers` (List of String) Failover provider order.
 - `regulatory_regimes` (List of String) Explicit regulatory regimes for onboarding baseline auto-pack loading (for example: soc2, hipaa, gdpr, fedramp, sec_cftc). Legacy packs only; defaults to SOC2 when unset. Does not activate executable compliance.
 - `secret_broker_allowed_hosts` (List of String) Allowed host patterns for secret broker.
-- `secret_broker_auth_bindings_json` (String) JSON array of auth binding objects. Each has host_pattern, header, secret_ref (a reference to a stored secret, never the credential) and prefix (keep any trailing space, for example "Bearer "). A binding may also have id (a stable label for audit records) and agent_ids and tools (lists that limit the binding to those agents and tools; with neither, it applies to every agent and tool on its host).
+- `secret_broker_auth_bindings_json` (String) JSON array of auth binding objects. Each has host_pattern, header, secret_ref (a reference to a stored secret, never the credential) and prefix (keep any trailing space, for example "Bearer "). A binding may also have id (a stable label for audit records), agent_ids and tools (lists that limit the binding to those agents and tools; with neither, it applies to every agent and tool on its host) and upstream (the MCP gateway upstream the binding is for: a gateway is released a binding only when its agent_ids and tools are explicit and its upstream equals the request's upstream).
 - `secret_broker_enabled` (Boolean) Enable secret broker policy enforcement.
 - `secret_broker_fail_on_missing_secret` (Boolean) Fail governed calls when a referenced secret is unavailable. Leave it unset for the proxy default, which refuses the call when the broker is on. A false here is stored, but the proxy ignores a workspace false: only THOTH_SECRET_BROKER_FAIL_ON_MISSING_SECRET=false on the machine turns fail-closed off.
 - `secret_broker_provider` (String) Secret broker provider slug.

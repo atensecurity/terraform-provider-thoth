@@ -9,6 +9,9 @@ would show as drift.
 
 ### Added
 
+- `thoth_governance_settings`: a `secret_broker_auth_bindings_json` binding may set `upstream`, the MCP gateway
+  upstream it is for. A gateway is released a binding only when `upstream` equals the request's and
+  `agent_ids` and `tools` are explicit. Needs a server that stores the field.
 - `thoth_tool_inventory` data source: the workspace's tools with Thoth's advisory recommendation for each
   (risk flags and level, suggested classes, a suggested `STEP_UP` or `BLOCK`, the reasons and a draft rule),
   including tools seen only in recorded decisions such as Claude Code traffic. Read-only: it writes no

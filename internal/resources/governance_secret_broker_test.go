@@ -162,6 +162,13 @@ func TestNormalizeBindingsJSONMatchesTheServer(t *testing.T) {
 	if normalizeBindingsJSON(`[{"host_pattern":"a","header":"H","secret_ref":"r","prefix":"Bearer"}]`) == normalizeBindingsJSON(`[{"host_pattern":"a","header":"H","secret_ref":"r","prefix":"Bearer "}]`) {
 		t.Fatal("a prefix with and without its trailing space are different bindings")
 	}
+	// The server trims upstream; an empty one is the same as none.
+	if normalizeBindingsJSON(`[{"host_pattern":"a.b","header":"H","secret_ref":"r","prefix":"","upstream":" metabase "}]`) !=
+		normalizeBindingsJSON(`[{"host_pattern":"a.b","header":"H","secret_ref":"r","prefix":"","upstream":"metabase"}]`) ||
+		normalizeBindingsJSON(`[{"host_pattern":"a.b","header":"H","secret_ref":"r","prefix":"","upstream":" "}]`) !=
+			normalizeBindingsJSON(`[{"host_pattern":"a.b","header":"H","secret_ref":"r","prefix":""}]`) {
+		t.Fatal("upstream is trimmed and empty means none")
+	}
 	if got := normalizeBindingsJSON("not json"); got != "not json" {
 		t.Fatal(got)
 	}
