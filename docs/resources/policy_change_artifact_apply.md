@@ -10,6 +10,11 @@ description: |-
 
 Applies a generated policy change artifact through an approved apply channel.
 
+~> **A signed-in person's decision.** An API key, service or system principal is refused (403): a review or an apply
+needs a signed-in org admin with a second factor, who is never the person who made the request or who owns the key that
+made it. A key may still create the request with `thoth_policy_exception`. Run this resource with a `thothctl` sign-in,
+not an API key.
+
 ## Example Usage
 
 ```terraform

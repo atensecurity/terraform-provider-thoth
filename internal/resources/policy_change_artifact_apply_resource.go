@@ -194,6 +194,12 @@ func (r *policyChangeArtifactApplyResource) Create(ctx context.Context, req reso
 	}
 
 	row, err := r.client.ApplyPolicyChangeArtifact(ctx, requestID, payload)
+	if client.IsPendingApproval(err) {
+		// Not applied: leave the state unwritten so Terraform does not record a
+		// policy change that is not in force.
+		resp.Diagnostics.AddError("Policy change apply is pending approval", pendingApprovalDetail(err))
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error applying policy change artifact", err.Error())
 		return

@@ -1117,8 +1117,17 @@ func (c *Client) ApplyPolicyChangeArtifact(
 	}
 	out := map[string]any{}
 	path := c.tenantPath(fmt.Sprintf("policy-change-artifacts/%s/apply", url.PathEscape(normalized)))
-	err := c.doJSON(ctx, http.MethodPost, path, nil, payload, &out, false)
-	return out, err
+	if err := c.doJSON(ctx, http.MethodPost, path, nil, payload, &out, false); err != nil {
+		return out, err
+	}
+	// The bundle publish behind the apply was held for approval (HTTP 202,
+	// apply_pending): nothing is in force, so this is not an applied change.
+	if pending, _ := out["apply_pending"].(bool); pending {
+		id, _ := out["change_id"].(string)
+		message, _ := out["message"].(string)
+		return out, &PendingApprovalError{Action: "apply", ChangeID: id, Message: message}
+	}
+	return out, nil
 }
 
 func (c *Client) ListPolicyBundles(ctx context.Context, query map[string]string) (map[string]any, error) {
@@ -1134,15 +1143,51 @@ func (c *Client) GetPolicyBundle(ctx context.Context, bundleID string) (map[stri
 	return out, err
 }
 
+// PendingApprovalError is returned when the server accepted a policy bundle
+// change (HTTP 202) but did not apply it: a change from an API key stays
+// pending until a signed-in org admin with a second factor approves it, and
+// the enforced bundles do not change meanwhile.
+type PendingApprovalError struct {
+	Action   string
+	ChangeID string
+	Message  string
+}
+
+func (e *PendingApprovalError) Error() string {
+	return fmt.Sprintf("policy bundle %s is pending approval (change %s): %s", e.Action, e.ChangeID, e.Message)
+}
+
+// IsPendingApproval reports whether err is a held bundle change.
+func IsPendingApproval(err error) bool {
+	var pending *PendingApprovalError
+	return errors.As(err, &pending)
+}
+
+func pendingApproval(out map[string]any) error {
+	if held, _ := out["approval_required"].(bool); !held {
+		return nil
+	}
+	id, _ := out["change_id"].(string)
+	action, _ := out["action"].(string)
+	message, _ := out["message"].(string)
+	return &PendingApprovalError{Action: action, ChangeID: id, Message: message}
+}
+
 func (c *Client) CreatePolicyBundle(ctx context.Context, payload map[string]any, query map[string]string) (map[string]any, error) {
 	out := map[string]any{}
-	err := c.doJSON(ctx, http.MethodPost, c.tenantPath("policy-bundles"), query, payload, &out, false)
-	return out, err
+	if err := c.doJSON(ctx, http.MethodPost, c.tenantPath("policy-bundles"), query, payload, &out, false); err != nil {
+		return out, err
+	}
+	return out, pendingApproval(out)
 }
 
 func (c *Client) DeletePolicyBundle(ctx context.Context, bundleID string) error {
 	path := c.tenantPath(fmt.Sprintf("policy-bundles/%s", strings.TrimSpace(bundleID)))
-	return c.doJSON(ctx, http.MethodDelete, path, nil, nil, nil, false)
+	out := map[string]any{}
+	if err := c.doJSON(ctx, http.MethodDelete, path, nil, nil, &out, false); err != nil {
+		return err
+	}
+	return pendingApproval(out)
 }
 
 // ListDecisionsPage reads one page of recorded enforcement decisions, newest

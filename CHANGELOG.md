@@ -18,6 +18,12 @@ would show as drift.
   wrote is refused with 403, and a promotion to prod always starts pending (with `replace_existing`, the
   live prod rule keeps enforcing until the replacement is approved). Earlier text said only a key
   that was not an org admin's started pending and that turning a rule on needed an org admin's key.
+- `thoth_policy_bundle`: a create, update or destroy made with an API key is now held pending by the server until a
+  signed-in org admin approves it. The provider stops with a "pending approval" error that names the change id,
+  records nothing in state (so `plan` keeps showing the change, and a held destroy keeps the bundle in state), and
+  completes without a copy when run again after the approval. Needs a server with policy bundle approval.
+- `thoth_policy_exception_review` and `thoth_policy_change_artifact_apply` are refused for an API key (403): a review
+  or apply is a signed-in person's decision. Creating a request with `thoth_policy_exception` still works with a key.
 
 ### Added
 

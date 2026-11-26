@@ -173,6 +173,10 @@ func (r *policyBundleResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	next, err := r.createBundleFromPlan(ctx, plan)
+	if client.IsPendingApproval(err) {
+		resp.Diagnostics.AddError("Policy bundle change is pending approval", pendingApprovalDetail(err))
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating policy bundle", err.Error())
 		return
@@ -214,6 +218,10 @@ func (r *policyBundleResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	next, err := r.createBundleFromPlan(ctx, plan)
+	if client.IsPendingApproval(err) {
+		resp.Diagnostics.AddError("Policy bundle change is pending approval", pendingApprovalDetail(err))
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating policy bundle", err.Error())
 		return
@@ -232,6 +240,12 @@ func (r *policyBundleResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 	err := r.client.DeletePolicyBundle(ctx, bundleID)
+	if client.IsPendingApproval(err) {
+		// The bundle is still enforced: keep it in state so Terraform does not
+		// believe it is gone. Run destroy again after a person approves the change.
+		resp.Diagnostics.AddError("Policy bundle removal is pending approval", pendingApprovalDetail(err))
+		return
+	}
 	if err != nil && !client.IsNotFound(err) {
 		resp.Diagnostics.AddError("Error deleting policy bundle", err.Error())
 	}
@@ -320,6 +334,16 @@ func (r *policyBundleResource) createBundleFromPlan(
 		return policyBundleResourceModel{}, err
 	}
 	return flattenPolicyBundle(ctx, row, plan, r.tenantID, nil), nil
+}
+
+// pendingApprovalDetail explains a held change: nothing was applied, who
+// approves it, and what to run next.
+func pendingApprovalDetail(err error) string {
+	return err.Error() + ". The enforced policy bundles did not change. A change made with an API key waits for a signed-in " +
+		"org admin with a second factor (MFA) to approve it; the admin who owns this API key cannot, unless the audited " +
+		"self-approval setting is on. List and approve pending changes with GET and POST " +
+		"/<tenant>/thoth/policy-bundle-changes (the dashboard, thothctl and MCP do not reach these routes yet), then run " +
+		"terraform apply again: it completes without queuing a copy. Until then terraform plan keeps showing this change."
 }
 
 func canonicalizePolicyBundleFramework(raw string) string {
