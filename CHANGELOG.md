@@ -7,6 +7,18 @@ All notable changes to `terraform-provider-thoth` are documented in this file.
 Needs a server that stores the three new fields; an older server ignores them, so a non-default value
 would show as drift.
 
+### Changed
+
+- `thoth_policy`: the documentation and descriptions now match the server. Every write through an
+  API key waits for a person, an org admin's key included: a new rule starts `pending`, and a change
+  to what a live rule matches or does puts it back to `pending`, where Thoth does not enforce it,
+  until a signed-in org admin decides it. Because `enabled` is true for anything not disabled, the
+  plan shows no difference for a pending rule; the provider now warns when it creates, updates or reads
+  a `pending` or `rejected` rule, and `status` shows it. An admin key that re-enables a rule its owner
+  wrote is refused with 403, and a promotion to prod always starts pending (with `replace_existing`, the
+  live prod rule keeps enforcing until the replacement is approved). Earlier text said only a key
+  that was not an org admin's started pending and that turning a rule on needed an org admin's key.
+
 ### Added
 
 - `thoth_governance_settings`: a `secret_broker_auth_bindings_json` binding may set `upstream`, the MCP gateway

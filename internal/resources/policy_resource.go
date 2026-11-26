@@ -28,9 +28,13 @@ import (
 var _ resource.Resource = &policyResource{}
 var _ resource.ResourceWithImportState = &policyResource{}
 
-// policyResource manages one policy rule in one environment. A rule created
-// by a key that is not an org admin starts pending until an org admin
-// approves it; Terraform reports that in status and does not approve it.
+// policyResource manages one policy rule in one environment. Every write
+// through an API key waits for a person: a new rule starts pending (an org
+// admin's key too), and a change to the content of a live rule puts it back
+// to pending, where Thoth does not enforce it, until a signed-in org admin
+// decides it. Terraform reports that in status (and a warning) and never
+// approves. enabled is true for anything not disabled, so a pending rule shows
+// no plan difference.
 type policyResource struct {
 	client   *client.Client
 	tenantID string
@@ -66,7 +70,7 @@ func (r *policyResource) Metadata(_ context.Context, req resource.MetadataReques
 
 func (r *policyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a policy rule in one environment (dev or prod). A rule created with a key that is not an org admin's starts pending until an org admin approves it; status shows that.",
+		Description: "Manages a policy rule in one environment (dev or prod). A rule written with an API key, which is how Terraform writes, always waits for a person: a new rule starts pending, and a change to what a live rule matches or does puts it back to pending, out of enforcement, until a signed-in org admin approves it. status shows that.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:      true,
@@ -146,9 +150,9 @@ func (r *policyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
-				Description: "Whether the rule applies. Turning a rule on needs an org admin's key; a pending rule stays pending until approved.",
+				Description: "Whether the rule applies once it is approved. It is true for every rule that is not disabled, a pending one included, so a rule waiting for approval shows no difference in a plan: read status. A pending rule stays pending until a signed-in org admin approves it, and an API key cannot approve its own change or turn on a rule its owner wrote (403).",
 			},
-			"status":     schema.StringAttribute{Computed: true, Description: "pending, active, disabled or rejected."},
+			"status":     schema.StringAttribute{Computed: true, Description: "pending, active, disabled or rejected. pending means Thoth is not enforcing the rule (or, for a change to a live rule, its new content) until a signed-in org admin approves it; the provider warns when it reads one."},
 			"created_at": schema.StringAttribute{Computed: true, Description: "Creation timestamp."},
 			"updated_at": schema.StringAttribute{Computed: true, Description: "Last update timestamp."},
 		},
@@ -196,6 +200,7 @@ func (r *policyResource) Create(ctx context.Context, req resource.CreateRequest,
 	next, diags := r.readBack(ctx, policyID, env, plan)
 	resp.Diagnostics.Append(diags...)
 	if !diags.HasError() {
+		resp.Diagnostics.Append(policyStatusWarning(next)...)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
 	}
 }
@@ -222,6 +227,9 @@ func (r *policyResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 	next, diags := flattenPolicy(ctx, row, state, r.tenantID)
 	resp.Diagnostics.Append(diags...)
+	if !diags.HasError() {
+		resp.Diagnostics.Append(policyStatusWarning(next)...)
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
 }
 
@@ -249,8 +257,26 @@ func (r *policyResource) Update(ctx context.Context, req resource.UpdateRequest,
 	next, diags := r.readBack(ctx, policyID, env, plan)
 	resp.Diagnostics.Append(diags...)
 	if !diags.HasError() {
+		resp.Diagnostics.Append(policyStatusWarning(next)...)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
 	}
+}
+
+// policyStatusWarning makes a rule that is not being enforced visible. enabled
+// is true for anything but disabled, so a pending or rejected rule produces no
+// plan difference; without this the gap is invisible from Terraform.
+func policyStatusWarning(model policyResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+	name := fmt.Sprintf("%s (%s)", model.Name.ValueString(), model.ID.ValueString())
+	switch model.Status.ValueString() {
+	case "pending":
+		diags.AddWarning("Policy rule is pending approval, not enforced",
+			fmt.Sprintf("The policy rule %s is pending: Thoth is not enforcing it (for a change to a live rule, its new content) until a signed-in org admin approves it, with MFA, in the dashboard, through the MCP configuration server (preview_policy_rule, action decide) or with `thothctl governance policies decide`. Terraform cannot approve it, and the plan shows no difference because enabled stays true.", name))
+	case "rejected":
+		diags.AddWarning("Policy rule was rejected, not enforced",
+			fmt.Sprintf("The policy rule %s was rejected by an org admin and is not enforced. Change it (which sends it back for approval) or delete it.", name))
+	}
+	return diags
 }
 
 func (r *policyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
