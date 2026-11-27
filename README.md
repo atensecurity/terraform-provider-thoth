@@ -98,7 +98,7 @@ omit explicit auth fields.
 - `thoth_browser_policy`
 - `thoth_browser_enrollment`
 - `thoth_fleet_api_key`
-- `thoth_endpoint_api_key`
+- `thoth_endpoint_api_key` (also issues the MCP gateway key: `kind = "mcp_gateway"` with `allowed_agents` and `allowed_tools`)
 - `thoth_agent_api_key`
 - `thoth_fleet`
 - `thoth_endpoint`

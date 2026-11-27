@@ -4,12 +4,14 @@ import (
 	"context"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -19,6 +21,7 @@ import (
 
 var _ resource.Resource = &scopedAPIKeyResource{}
 var _ resource.ResourceWithImportState = &scopedAPIKeyResource{}
+var _ resource.ResourceWithValidateConfig = &scopedAPIKeyResource{}
 
 type scopedAPIKeyResource struct {
 	client       *client.Client
@@ -55,6 +58,8 @@ func NewAgentAPIKeyResource() resource.Resource {
 func (r *scopedAPIKeyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + r.typeSuffix
 }
+
+func (r *scopedAPIKeyResource) isEndpoint() bool { return r.scopeLevel == apiKeyScopeEndpoint }
 
 func (r *scopedAPIKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
@@ -130,6 +135,117 @@ func (r *scopedAPIKeyResource) Schema(_ context.Context, _ resource.SchemaReques
 			},
 		},
 	}
+	if r.isEndpoint() {
+		resp.Schema.Attributes["kind"] = schema.StringAttribute{
+			Optional: true,
+			Description: "Key kind. Omit for an ordinary key. `mcp_gateway` issues the runtime key of the customer-hosted MCP gateway: " +
+				"it needs `permissions = [\"execute\"]` and both `allowed_agents` and `allowed_tools`. Changing it replaces the key.",
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		}
+		resp.Schema.Attributes["allowed_agents"] = schema.SetAttribute{
+			Optional:    true,
+			ElementType: types.StringType,
+			Description: "Required when `kind = \"mcp_gateway\"`, rejected otherwise. Exact ids of agents under this endpoint (1 to 128 printable ASCII characters, " +
+				"no space, `*`, `/` or `\\`) that the key may act for. At most 64. The server lower-cases the ids; every id must already be on the endpoint. Changing it replaces the key.",
+			PlanModifiers: []planmodifier.Set{setplanmodifier.RequiresReplace()},
+		}
+		resp.Schema.Attributes["allowed_tools"] = schema.SetAttribute{
+			Optional:    true,
+			ElementType: types.StringType,
+			Description: "Required when `kind = \"mcp_gateway\"`, rejected otherwise. Tools the key may ask about, each `<upstream>__<tool>` exactly, " +
+				"or `<upstream>__<tool prefix>*` with one trailing `*` after at least 3 characters. The upstream is letters, digits, `-` and `_` (no `__`, not ending in `_`); " +
+				"the tool is letters, digits and `_ - . :` and does not start with `_`; each part is at most 128 characters. At most 64. The server lower-cases the names. Changing it replaces the key.",
+			PlanModifiers: []planmodifier.Set{setplanmodifier.RequiresReplace()},
+		}
+	}
+}
+
+// ValidateConfig applies the gateway key rules at plan time, with the same
+// rules as the server, so a mistake is reported before anything is created.
+func (r *scopedAPIKeyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	if !r.isEndpoint() {
+		return
+	}
+	var kind types.String
+	var agents, tools types.Set
+	var perms types.List
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("kind"), &kind)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("allowed_agents"), &agents)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("allowed_tools"), &tools)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("permissions"), &perms)...)
+	if resp.Diagnostics.HasError() || kind.IsUnknown() || agents.IsUnknown() || tools.IsUnknown() || perms.IsUnknown() {
+		return
+	}
+	for _, set := range []types.Set{agents, tools} {
+		for _, el := range set.Elements() {
+			if el.IsUnknown() {
+				return
+			}
+		}
+	}
+	var permValues []string
+	for _, el := range perms.Elements() {
+		s, ok := el.(types.String)
+		if !ok || s.IsUnknown() {
+			return
+		}
+		permValues = append(permValues, s.ValueString())
+	}
+	if err := validateGatewayKeyKind(kind.ValueString(), r.scopeLevel, permValues); err != nil {
+		resp.Diagnostics.AddAttributeError(path.Root("kind"), "Invalid gateway key", err.Error())
+		return
+	}
+	agentValues, toolValues := optionalStrings(agents), optionalStrings(tools)
+	if kind.ValueString() != gatewayKeyKind {
+		if agentValues != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("allowed_agents"), "Invalid gateway key scope", `allowed_agents is accepted only with kind = "mcp_gateway"`)
+		}
+		if toolValues != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("allowed_tools"), "Invalid gateway key scope", `allowed_tools is accepted only with kind = "mcp_gateway"`)
+		}
+		return
+	}
+	if _, err := normalizeGatewayKeyScopeList("allowed_agents", agentValues, false); err != nil {
+		resp.Diagnostics.AddAttributeError(path.Root("allowed_agents"), "Invalid gateway key scope", err.Error())
+	}
+	if _, err := normalizeGatewayKeyScopeList("allowed_tools", toolValues, true); err != nil {
+		resp.Diagnostics.AddAttributeError(path.Root("allowed_tools"), "Invalid gateway key scope", err.Error())
+	}
+}
+
+// optionalStrings is nil for a null set and a non-nil slice otherwise, so an
+// empty set can be told from an omitted one.
+func optionalStrings(set types.Set) []string {
+	if set.IsNull() || set.IsUnknown() {
+		return nil
+	}
+	return append([]string{}, setStrings(set)...)
+}
+
+type stateGetter interface {
+	Get(ctx context.Context, target any) diag.Diagnostics
+}
+
+type stateSetter interface {
+	Set(ctx context.Context, val any) diag.Diagnostics
+}
+
+func (r *scopedAPIKeyResource) loadModel(ctx context.Context, src stateGetter) (apiKeyModel, gatewayScopeFields, diag.Diagnostics) {
+	if r.isEndpoint() {
+		var m endpointAPIKeyModel
+		d := src.Get(ctx, &m)
+		return m.apiKeyModel, m.gatewayScopeFields, d
+	}
+	var m apiKeyModel
+	d := src.Get(ctx, &m)
+	return m, nullGatewayScope(), d
+}
+
+func (r *scopedAPIKeyResource) storeModel(ctx context.Context, dst stateSetter, m apiKeyModel, g gatewayScopeFields) diag.Diagnostics {
+	if r.isEndpoint() {
+		return dst.Set(ctx, &endpointAPIKeyModel{apiKeyModel: m, gatewayScopeFields: g})
+	}
+	return dst.Set(ctx, &m)
 }
 
 func (r *scopedAPIKeyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -142,8 +258,8 @@ func (r *scopedAPIKeyResource) Configure(_ context.Context, req resource.Configu
 }
 
 func (r *scopedAPIKeyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan apiKeyModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	plan, gateway, diags := r.loadModel(ctx, req.Plan)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -183,6 +299,13 @@ func (r *scopedAPIKeyResource) Create(ctx context.Context, req resource.CreateRe
 	}
 	payload["permissions"] = permValues
 
+	if r.isEndpoint() {
+		if err := addGatewayScopePayload(payload, gateway, perms, r.scopeLevel); err != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("kind"), "Invalid gateway key", err.Error())
+			return
+		}
+	}
+
 	row, err := r.client.CreateAPIKey(ctx, payload)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating API key", err.Error())
@@ -193,12 +316,35 @@ func (r *scopedAPIKeyResource) Create(ctx context.Context, req resource.CreateRe
 	plan.ScopeTargetID = types.StringValue(scopeTargetID)
 	next := flattenAPIKeyCreated(row, plan, r.tenantID)
 	next.ScopeLevel = types.StringValue(r.scopeLevel)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
+	resp.Diagnostics.Append(r.storeModel(ctx, &resp.State, next, gateway)...)
+}
+
+// addGatewayScopePayload adds kind, allowed_agents and allowed_tools to the
+// create request, after the same checks the plan made.
+func addGatewayScopePayload(payload map[string]any, g gatewayScopeFields, perms []string, scopeLevel string) error {
+	kind := ""
+	if !g.Kind.IsNull() && !g.Kind.IsUnknown() {
+		kind = g.Kind.ValueString()
+	}
+	if err := validateGatewayKeyKind(kind, scopeLevel, perms); err != nil {
+		return err
+	}
+	agents, tools, err := normalizeGatewayKeyScope(kind, optionalStrings(g.AllowedAgents), optionalStrings(g.AllowedTools))
+	if err != nil {
+		return err
+	}
+	if kind == "" {
+		return nil
+	}
+	payload["kind"] = kind
+	payload["allowed_agents"] = agents
+	payload["allowed_tools"] = tools
+	return nil
 }
 
 func (r *scopedAPIKeyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state apiKeyModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	state, gateway, diags := r.loadModel(ctx, req.State)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -219,21 +365,21 @@ func (r *scopedAPIKeyResource) Read(ctx context.Context, req resource.ReadReques
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, &next)...)
+	resp.Diagnostics.Append(r.storeModel(ctx, &resp.State, next, flattenGatewayScope(row, gateway))...)
 }
 
 func (r *scopedAPIKeyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan apiKeyModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	plan, gateway, diags := r.loadModel(ctx, req.Plan)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.Append(r.storeModel(ctx, &resp.State, plan, gateway)...)
 }
 
 func (r *scopedAPIKeyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state apiKeyModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	state, _, diags := r.loadModel(ctx, req.State)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

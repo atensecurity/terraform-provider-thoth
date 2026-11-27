@@ -27,6 +27,15 @@ would show as drift.
 
 ### Added
 
+- `thoth_endpoint_api_key`: `kind`, `allowed_agents` and `allowed_tools` issue the runtime key of the
+  customer-hosted MCP gateway. `kind` accepts only `mcp_gateway`, which needs `permissions = ["execute"]`
+  and both lists (exact agent ids on the endpoint; tools as `<upstream>__<tool>` or a prefix ending in one
+  `*`). The rules are the server's, checked at plan time with plan-time errors, so a bad entry stops before a
+  key is created. The three attributes replace the key when changed, are read back on refresh and import, and
+  keep the configured spelling when the server only lower-cases, de-duplicates or sorts. The secret stays
+  sensitive and is returned once. The `thoth_api_keys` data source documents the gateway fields in each row,
+  including `needs_reissue`. Needs a server that stores the lists; an older server refuses them. Not added:
+  a gateway key cannot be created from the fleet or agent key resources, by design.
 - `thoth_governance_settings`: a `secret_broker_auth_bindings_json` binding may set `upstream`, the MCP gateway
   upstream it is for. A gateway is released a binding only when `upstream` equals the request's and
   `agent_ids` and `tools` are explicit. Needs a server that stores the field.

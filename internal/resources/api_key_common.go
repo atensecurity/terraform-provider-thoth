@@ -1,6 +1,9 @@
 package resources
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/atensecurity/terraform-provider-thoth/internal/tfhelpers"
@@ -65,4 +68,85 @@ func flattenAPIKeyInfo(row map[string]any, state apiKeyModel, tenantID string) a
 	next.LastUsedAt = nullableString(row, "last_used_at")
 	next.Active = types.BoolValue(tfhelpers.GetBool(row, "active"))
 	return next
+}
+
+// gatewayScopeFields are the attributes only thoth_endpoint_api_key has.
+type gatewayScopeFields struct {
+	Kind          types.String `tfsdk:"kind"`
+	AllowedAgents types.Set    `tfsdk:"allowed_agents"`
+	AllowedTools  types.Set    `tfsdk:"allowed_tools"`
+}
+
+// endpointAPIKeyModel is the state of thoth_endpoint_api_key.
+type endpointAPIKeyModel struct {
+	apiKeyModel
+	gatewayScopeFields
+}
+
+func nullGatewayScope() gatewayScopeFields {
+	return gatewayScopeFields{
+		Kind:          types.StringNull(),
+		AllowedAgents: types.SetNull(types.StringType),
+		AllowedTools:  types.SetNull(types.StringType),
+	}
+}
+
+func stringSetValue(values []string) types.Set {
+	if len(values) == 0 {
+		return types.SetNull(types.StringType)
+	}
+	items := make([]types.String, 0, len(values))
+	for _, v := range values {
+		items = append(items, types.StringValue(v))
+	}
+	set, _ := types.SetValueFrom(nil, types.StringType, items)
+	return set
+}
+
+func setStrings(set types.Set) []string {
+	if set.IsNull() || set.IsUnknown() {
+		return nil
+	}
+	out := make([]string, 0, len(set.Elements()))
+	for _, el := range set.Elements() {
+		if s, ok := el.(types.String); ok && !s.IsNull() && !s.IsUnknown() {
+			out = append(out, s.ValueString())
+		}
+	}
+	return out
+}
+
+// flattenGatewayScope reads kind and the lists back from a key row. The
+// server stores the lists lower-cased, de-duplicated and sorted, so a list in
+// configuration that differs only in case or repeats keeps its configured
+// spelling when the server's list is its normal form (no perpetual diff).
+func flattenGatewayScope(row map[string]any, prior gatewayScopeFields) gatewayScopeFields {
+	next := nullGatewayScope()
+	if kind := tfhelpers.GetString(row, "kind"); kind != "" {
+		next.Kind = types.StringValue(kind)
+	}
+	next.AllowedAgents = keepIfSameScope(prior.AllowedAgents, tfhelpers.GetStringSlice(row, "allowed_agents"))
+	next.AllowedTools = keepIfSameScope(prior.AllowedTools, tfhelpers.GetStringSlice(row, "allowed_tools"))
+	return next
+}
+
+func keepIfSameScope(prior types.Set, server []string) types.Set {
+	if have := setStrings(prior); len(have) > 0 && len(server) > 0 {
+		seen := map[string]bool{}
+		norm := []string{}
+		for _, v := range have {
+			v = strings.ToLower(v)
+			if !seen[v] {
+				seen[v] = true
+				norm = append(norm, v)
+			}
+		}
+		sort.Strings(norm)
+		want := append([]string(nil), server...)
+		sort.Strings(want)
+		if strings.Join(norm, "\x00") == strings.Join(want, "\x00") {
+			return prior
+		}
+	}
+	return stringSetValue(server)
 }

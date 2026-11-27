@@ -24,3 +24,35 @@ resource "thoth_endpoint_api_key" "endpoint_exec" {
   jit_reason      = "endpoint-remediation"
 }
 ```
+
+## Gateway key
+
+A key of `kind = "mcp_gateway"` is the runtime key of the customer-hosted MCP gateway. It is endpoint-scoped and
+execute-only, and it names the agents and tools it may act for, so a stolen key cannot name any other agent under the
+endpoint or any other tool. The rules are checked at plan time with the same rules the server applies:
+
+- `permissions` must be exactly `["execute"]`.
+- `allowed_agents` and `allowed_tools` are both required, and are rejected without `kind = "mcp_gateway"`.
+- An agent is an exact id (1 to 128 printable ASCII characters, no space, `*`, `/` or `\`) that is already on the
+  endpoint (the server checks that).
+- A tool is `<upstream>__<tool>` exactly, or `<upstream>__<tool prefix>*` with one trailing `*` after at least 3
+  characters. The upstream is letters, digits, `-` and `_` (no `__`, not ending in `_`); the tool is letters, digits
+  and `_ - . :` and does not start with `_`.
+- At most 64 entries each. The server lower-cases, de-duplicates and sorts them; the configured spelling is kept in
+  state when it only differs in case or repeats.
+
+Changing `kind`, `allowed_agents` or `allowed_tools` replaces the key (a new secret). The key is returned once, in
+`api_key`, which stays sensitive. A gateway key issued before the lists existed shows `needs_reissue = true` in the
+rows of the `thoth_api_keys` data source (`data_json`) and must be replaced.
+
+```terraform
+resource "thoth_endpoint_api_key" "gateway" {
+  name            = "mcp-gateway"
+  scope_target_id = "endpoint-123"
+  permissions     = ["execute"]
+  kind            = "mcp_gateway"
+  allowed_agents  = ["invoice-processor-prod"]
+  allowed_tools   = ["metabase__run_query", "github__search_*"]
+  ttl_seconds     = 7776000
+}
+```

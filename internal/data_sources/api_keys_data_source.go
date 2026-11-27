@@ -56,7 +56,7 @@ func (d *apiKeysDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"data_json": schema.StringAttribute{
 				Computed:    true,
-				Description: "API key rows as JSON array.",
+				Description: "API key rows as JSON array. A gateway key row carries kind, allowed_agents, allowed_tools and needs_reissue (true for an active gateway key issued before the lists existed, which must be replaced).",
 			},
 		},
 	}

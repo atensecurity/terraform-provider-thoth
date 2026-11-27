@@ -23,5 +23,5 @@ Reads API keys with optional scope and active filters.
 
 ### Read-Only
 
-- `data_json` (String) API key rows as JSON array.
+- `data_json` (String) API key rows as JSON array. A gateway key row carries kind, allowed_agents, allowed_tools and needs_reissue (true for an active gateway key issued before the lists existed, which must be replaced).
 - `total` (Number) Total API keys returned after filtering.
