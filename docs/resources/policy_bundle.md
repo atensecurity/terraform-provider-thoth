@@ -16,7 +16,7 @@ approve them; the bundles agents are held to do not change meanwhile. `terraform
 change is pending approval" and the change id, and **`terraform plan` keeps showing the change** (nothing is saved in
 state, so it never reports "no changes" while the old bundle is still enforced). An org admin lists pending changes with
 `GET /<tenant>/thoth/policy-bundle-changes`, reads one with `GET .../<change id>`, and approves or rejects it with `POST
-.../approve` or `.../reject`; the admin who owns the key cannot approve it unless the audited single-admin
+.../approve` or `.../reject` (an approval must send the `content_hash` it read, or it is refused); the admin who owns the key cannot approve it unless the audited single-admin
 self-approval setting is on, and a change expires after 14 days. After approval, run `terraform apply` again: it
 returns the approved bundle and saves its id without publishing a copy (after an approved destroy, run `terraform
 destroy` again). The dashboard, `thothctl` and MCP do not reach these routes yet. A change made with a signed-in
